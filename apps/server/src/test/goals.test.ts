@@ -98,6 +98,30 @@ describe("goals + steps", () => {
     expect(deleteAsIntruder.statusCode).toBe(404);
   });
 
+  it("round-trips weeklyTargetMinutes through create and update", async () => {
+    const user = await registerTestUser(app);
+    const headers = authHeaders(user.token);
+
+    const created = await app.inject({
+      method: "POST",
+      url: "/api/goals",
+      headers,
+      payload: { domain: "business", title: "Learn guitar", weeklyTargetMinutes: 180 },
+    });
+    expect(created.statusCode).toBe(201);
+    const goal = created.json();
+    expect(goal.weeklyTargetMinutes).toBe(180);
+
+    const updated = await app.inject({
+      method: "PATCH",
+      url: `/api/goals/${goal.id}`,
+      headers,
+      payload: { weeklyTargetMinutes: 240 },
+    });
+    expect(updated.statusCode).toBe(200);
+    expect(updated.json().weeklyTargetMinutes).toBe(240);
+  });
+
   it("returns rule-based suggested steps for a goal", async () => {
     const user = await registerTestUser(app);
     const created = await app.inject({

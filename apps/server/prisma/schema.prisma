@@ -75,6 +75,7 @@ model Goal {
   title       String
   description String?
   targetDate  String?
+  weeklyTargetMinutes Int?
   status      String   @default("active") // active | paused | completed | abandoned
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

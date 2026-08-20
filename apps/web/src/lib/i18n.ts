@@ -108,6 +108,8 @@ export const t = {
     goalTitle: "Názov",
     titlePlaceholder: "napr. Rozbehnúť YouTube kanál",
     status: "Stav",
+    weeklyTargetOptional: "Týždenný časový cieľ (voliteľné)",
+    weeklyTargetPlaceholder: "napr. 180 (min/týždeň)",
     createGoal: "Vytvoriť cieľ",
     emptyTitle: "Zatiaľ nemáš žiadny cieľ",
     emptyBody: "Vytvor cieľ a získaj návrh rozdelenia na kroky, ktoré plánovač začne zaraďovať do kalendára.",
@@ -141,6 +143,9 @@ export const t = {
       n < 0 ? `Termín uplynul pred ${Math.abs(n)} dňami` : n === 0 ? "Termín je dnes" : `${n} dní do termínu`,
     investmentTrendTitle: "Investícia v čase (8 týždňov)",
     investmentTrendEmpty: "Zatiaľ žiadna investícia času za posledných 8 týždňov.",
+    weeklyTargetLabel: (done: number, target: number) => `Tento týždeň: ${done} / ${target} min`,
+    weeklyTargetMet: "Cieľ splnený",
+    weeklyTargetUnderway: "Ešte nesplnený",
   },
   recurrenceLabel: {
     once: "Jednorazovo",

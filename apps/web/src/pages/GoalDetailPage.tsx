@@ -30,6 +30,7 @@ function ProgressCard({ goalId }: { goalId: string }) {
         {progress.totalCompletedMinutes > 0 && (
           <p className="mt-2 text-sm text-slate-600">{t.goalDetail.totalInvested(progress.totalCompletedMinutes)}</p>
         )}
+        <WeeklyTargetSection progress={progress} />
       </Card>
     );
   }
@@ -42,6 +43,7 @@ function ProgressCard({ goalId }: { goalId: string }) {
         {progress.totalCompletedMinutes > 0 && (
           <p className="mt-2 text-sm text-slate-600">{t.goalDetail.totalInvested(progress.totalCompletedMinutes)}</p>
         )}
+        <WeeklyTargetSection progress={progress} />
       </Card>
     );
   }
@@ -75,7 +77,34 @@ function ProgressCard({ goalId }: { goalId: string }) {
         {progress.daysRemaining !== null && <p>{t.goalDetail.daysRemainingLabel(progress.daysRemaining)}</p>}
         <p>{t.goalDetail.paceLabel(progress.recentPaceMinutesPerDay)}</p>
       </div>
+      <WeeklyTargetSection progress={progress} />
     </Card>
+  );
+}
+
+function WeeklyTargetSection({ progress }: { progress: GoalProgress }) {
+  if (progress.weeklyTargetMinutes == null) return null;
+  return (
+    <div className="mt-3 border-t border-slate-100 pt-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs text-slate-500">
+          {t.goalDetail.weeklyTargetLabel(progress.currentWeekMinutes, progress.weeklyTargetMinutes)}
+        </span>
+        <span
+          className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
+            progress.weeklyTargetMet ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"
+          }`}
+        >
+          {progress.weeklyTargetMet ? t.goalDetail.weeklyTargetMet : t.goalDetail.weeklyTargetUnderway}
+        </span>
+      </div>
+      <div className="mt-1.5 h-1.5 w-full rounded-full bg-slate-100">
+        <div
+          className={`h-1.5 rounded-full ${progress.weeklyTargetMet ? "bg-emerald-500" : "bg-brand-500"}`}
+          style={{ width: `${Math.min(100, (progress.currentWeekMinutes / progress.weeklyTargetMinutes) * 100)}%` }}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -123,6 +152,7 @@ interface GoalFormState {
   domain: LifeDomain;
   title: string;
   targetDate: string;
+  weeklyTargetMinutes: string;
   status: GoalStatus;
 }
 
@@ -223,7 +253,13 @@ export function GoalDetailPage() {
 
   function startEditGoal() {
     if (!goal) return;
-    setGoalForm({ domain: goal.domain, title: goal.title, targetDate: goal.targetDate ?? "", status: goal.status });
+    setGoalForm({
+      domain: goal.domain,
+      title: goal.title,
+      targetDate: goal.targetDate ?? "",
+      weeklyTargetMinutes: goal.weeklyTargetMinutes != null ? String(goal.weeklyTargetMinutes) : "",
+      status: goal.status,
+    });
     setEditingGoal(true);
   }
 
@@ -234,6 +270,7 @@ export function GoalDetailPage() {
       domain: goalForm.domain,
       title: goalForm.title.trim(),
       targetDate: goalForm.targetDate || undefined,
+      weeklyTargetMinutes: goalForm.weeklyTargetMinutes ? Number(goalForm.weeklyTargetMinutes) : undefined,
       status: goalForm.status,
     });
     setEditingGoal(false);
@@ -299,6 +336,18 @@ export function GoalDetailPage() {
                   type="date"
                   value={goalForm.targetDate}
                   onChange={(e) => setGoalForm({ ...goalForm, targetDate: e.target.value })}
+                  className={`${fieldClass} w-full`}
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">{t.goals.weeklyTargetOptional}</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={10080}
+                  value={goalForm.weeklyTargetMinutes}
+                  onChange={(e) => setGoalForm({ ...goalForm, weeklyTargetMinutes: e.target.value })}
+                  placeholder={t.goals.weeklyTargetPlaceholder}
                   className={`${fieldClass} w-full`}
                 />
               </div>

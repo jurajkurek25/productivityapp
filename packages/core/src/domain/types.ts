@@ -22,6 +22,7 @@ export interface Goal {
   title: string;
   description?: string;
   targetDate?: ISODate;
+  weeklyTargetMinutes?: number;
   status: GoalStatus;
   createdAt: ISODateTime;
   updatedAt: ISODateTime;

@@ -18,6 +18,12 @@ export interface GoalProgress {
   /** Average completed minutes/day for this goal over the last 14 days. */
   recentPaceMinutesPerDay: number;
   status: GoalProgressStatus;
+  /** Self-set weekly time budget for this goal, independent of any deadline. */
+  weeklyTargetMinutes: number | null;
+  /** Completed minutes for this goal within the current Sun–Sat week. */
+  currentWeekMinutes: number;
+  /** Whether currentWeekMinutes has reached weeklyTargetMinutes — null when no target is set. */
+  weeklyTargetMet: boolean | null;
 }
 
 function todayISO(): string {
@@ -30,6 +36,11 @@ function addDays(date: string, n: number): string {
 
 function diffDays(a: string, b: string): number {
   return Math.round((new Date(b + "T00:00:00Z").getTime() - new Date(a + "T00:00:00Z").getTime()) / 86_400_000);
+}
+
+function startOfWeek(date: string): string {
+  const dow = new Date(date + "T00:00:00Z").getUTCDay();
+  return addDays(date, -dow);
 }
 
 /**
@@ -72,6 +83,12 @@ export async function computeGoalProgress(workspaceId: string, goalId: string): 
 
   const daysRemaining = goal.targetDate ? diffDays(todayISO(), goal.targetDate) : null;
 
+  const currentWeekStart = startOfWeek(todayISO());
+  const currentWeekMinutes = completedInstances
+    .filter((i) => i.scheduledDate >= currentWeekStart)
+    .reduce((sum, i) => sum + i.durationMinutes, 0);
+  const weeklyTargetMet = goal.weeklyTargetMinutes == null ? null : currentWeekMinutes >= goal.weeklyTargetMinutes;
+
   let status: GoalProgressStatus;
   if (!goal.targetDate) {
     status = "no_deadline";
@@ -96,6 +113,9 @@ export async function computeGoalProgress(workspaceId: string, goalId: string): 
     totalCompletedMinutes,
     recentPaceMinutesPerDay,
     status,
+    weeklyTargetMinutes: goal.weeklyTargetMinutes,
+    currentWeekMinutes,
+    weeklyTargetMet,
   };
 }
 

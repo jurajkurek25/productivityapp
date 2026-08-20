@@ -12,11 +12,18 @@ interface GoalFormState {
   domain: LifeDomain;
   title: string;
   targetDate: string;
+  weeklyTargetMinutes: string;
   status: GoalStatus;
 }
 
 function formStateFromGoal(g: Goal): GoalFormState {
-  return { domain: g.domain, title: g.title, targetDate: g.targetDate ?? "", status: g.status };
+  return {
+    domain: g.domain,
+    title: g.title,
+    targetDate: g.targetDate ?? "",
+    weeklyTargetMinutes: g.weeklyTargetMinutes != null ? String(g.weeklyTargetMinutes) : "",
+    status: g.status,
+  };
 }
 
 function GoalFields({
@@ -54,6 +61,18 @@ function GoalFields({
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
         </div>
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-slate-700">{t.goals.weeklyTargetOptional}</label>
+          <input
+            type="number"
+            min={0}
+            max={10080}
+            value={state.weeklyTargetMinutes}
+            onChange={(e) => onChange({ weeklyTargetMinutes: e.target.value })}
+            placeholder={t.goals.weeklyTargetPlaceholder}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          />
+        </div>
       </div>
       <div>
         <label className="mb-1.5 block text-sm font-medium text-slate-700">{t.goals.goalTitle}</label>
@@ -85,7 +104,13 @@ function GoalFields({
   );
 }
 
-const EMPTY_FORM: GoalFormState = { domain: "business", title: "", targetDate: "", status: "active" };
+const EMPTY_FORM: GoalFormState = {
+  domain: "business",
+  title: "",
+  targetDate: "",
+  weeklyTargetMinutes: "",
+  status: "active",
+};
 
 export function GoalsPage() {
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -112,6 +137,7 @@ export function GoalsPage() {
       domain: createState.domain,
       title: createState.title.trim(),
       targetDate: createState.targetDate || undefined,
+      weeklyTargetMinutes: createState.weeklyTargetMinutes ? Number(createState.weeklyTargetMinutes) : undefined,
     });
     setCreateState(EMPTY_FORM);
     setShowForm(false);
@@ -130,6 +156,7 @@ export function GoalsPage() {
       domain: editState.domain,
       title: editState.title.trim(),
       targetDate: editState.targetDate || undefined,
+      weeklyTargetMinutes: editState.weeklyTargetMinutes ? Number(editState.weeklyTargetMinutes) : undefined,
       status: editState.status,
     });
     setEditingId(null);

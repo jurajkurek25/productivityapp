@@ -67,6 +67,9 @@ export interface GoalProgress {
   totalCompletedMinutes: number;
   recentPaceMinutesPerDay: number;
   status: GoalProgressStatus;
+  weeklyTargetMinutes: number | null;
+  currentWeekMinutes: number;
+  weeklyTargetMet: boolean | null;
 }
 
 export interface BehindPaceGoal {
@@ -109,7 +112,13 @@ export const api = {
     request<void>("/auth/change-password", { method: "POST", body: JSON.stringify({ currentPassword, newPassword }) }),
 
   listGoals: () => request<Goal[]>("/goals"),
-  createGoal: (data: { domain: LifeDomain; title: string; description?: string; targetDate?: string }) =>
+  createGoal: (data: {
+    domain: LifeDomain;
+    title: string;
+    description?: string;
+    targetDate?: string;
+    weeklyTargetMinutes?: number;
+  }) =>
     request<Goal>("/goals", { method: "POST", body: JSON.stringify(data) }),
   getGoal: (id: string) => request<Goal & { steps: Step[] }>(`/goals/${id}`),
   updateGoal: (id: string, data: Partial<Goal>) =>

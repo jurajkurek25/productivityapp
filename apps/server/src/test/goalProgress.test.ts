@@ -22,12 +22,12 @@ describe("goal progress", () => {
     await app.close();
   });
 
-  async function createGoal(token: string, targetDate?: string) {
+  async function createGoal(token: string, targetDate?: string, weeklyTargetMinutes?: number) {
     const res = await app.inject({
       method: "POST",
       url: "/api/goals",
       headers: authHeaders(token),
-      payload: { domain: "business", title: "Goal", targetDate },
+      payload: { domain: "business", title: "Goal", targetDate, weeklyTargetMinutes },
     });
     return res.json();
   }
@@ -174,6 +174,57 @@ describe("goal progress", () => {
       headers: authHeaders(stranger.token),
     });
     expect(res.statusCode).toBe(404);
+  });
+
+  describe("weekly target", () => {
+    it("reports null weekly fields when no weekly target is set", async () => {
+      const user = await registerTestUser(app);
+      const goal = await createGoal(user.token);
+
+      const res = await app.inject({
+        method: "GET",
+        url: `/api/goals/${goal.id}/progress`,
+        headers: authHeaders(user.token),
+      });
+      const body = res.json();
+      expect(body.weeklyTargetMinutes).toBeNull();
+      expect(body.weeklyTargetMet).toBeNull();
+      expect(body.currentWeekMinutes).toBe(0);
+    });
+
+    it("reports weeklyTargetMet=true once this week's completed minutes reach the target", async () => {
+      const user = await registerTestUser(app);
+      const goal = await createGoal(user.token, undefined, 90);
+      const step = await createOnceStep(user.workspaceId, goal.id, 200);
+      await completeInstance(user.workspaceId, goal.id, step.id, todayISO(), 100);
+
+      const res = await app.inject({
+        method: "GET",
+        url: `/api/goals/${goal.id}/progress`,
+        headers: authHeaders(user.token),
+      });
+      const body = res.json();
+      expect(body.weeklyTargetMinutes).toBe(90);
+      expect(body.currentWeekMinutes).toBe(100);
+      expect(body.weeklyTargetMet).toBe(true);
+    });
+
+    it("reports weeklyTargetMet=false when this week falls short and ignores minutes from before this week", async () => {
+      const user = await registerTestUser(app);
+      const goal = await createGoal(user.token, undefined, 180);
+      const step = await createOnceStep(user.workspaceId, goal.id, 500);
+      await completeInstance(user.workspaceId, goal.id, step.id, addDays(todayISO(), -30), 400);
+
+      const res = await app.inject({
+        method: "GET",
+        url: `/api/goals/${goal.id}/progress`,
+        headers: authHeaders(user.token),
+      });
+      const body = res.json();
+      expect(body.weeklyTargetMinutes).toBe(180);
+      expect(body.currentWeekMinutes).toBe(0);
+      expect(body.weeklyTargetMet).toBe(false);
+    });
   });
 
   describe("progress-summary", () => {
