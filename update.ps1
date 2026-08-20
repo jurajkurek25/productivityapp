@@ -4,7 +4,7 @@
 
 $ErrorActionPreference = "Stop"
 
-$AppDir = "/home/neoworkly-balance/htdocs/balance.neoworkly.com"
+$AppDir = "/home/neoworkly-balance/balance-app"
 $Branch = "claude/productivity-energy-adaptive-scheduler-qqxbcs"
 $Pm2Name = "balance-api"
 
