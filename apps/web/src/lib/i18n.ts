@@ -41,6 +41,7 @@ export const t = {
     goals: "Ciele",
     calendar: "Kalendár",
     study: "Štúdium",
+    settings: "Nastavenia",
     logout: "Odhlásiť sa",
   },
   auth: {
@@ -84,6 +85,9 @@ export const t = {
     scheduled: "naplánované",
     done: "splnené",
     neglected: (domains: string) => `Zanedbané: ${domains}. Zváž pridanie cieľa alebo kroku v tejto oblasti.`,
+    missedBanner: (count: number) => `Máš ${count} zmeškaných úloh.`,
+    rescheduleMissed: "Presunúť na dnes",
+    rescheduling: "Presúvam…",
   },
   goals: {
     title: "Ciele",
@@ -136,6 +140,15 @@ export const t = {
     addTask: "Pridať úlohu",
     quickAddPlaceholder: "Rýchla úloha…",
     quickAddSave: "Pridať",
+  },
+  settings: {
+    title: "Nastavenia",
+    subtitle: "Uprav si týždennú kapacitu — koľko minút na jednotlivé oblasti máš v ktorý deň k dispozícii. Plánovač túto kapacitu škáluje podľa dennej energie.",
+    dayNames: ["Nedeľa", "Pondelok", "Utorok", "Streda", "Štvrtok", "Piatok", "Sobota"] as string[],
+    save: "Uložiť kapacitu",
+    saving: "Ukladám…",
+    saved: "Uložené.",
+    error: "Uloženie sa nepodarilo.",
   },
   notifications: {
     enable: "Zapnúť ranné pripomienky",

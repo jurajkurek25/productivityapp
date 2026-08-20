@@ -32,6 +32,10 @@ const quickTaskSchema = z.object({
   durationMinutes: z.number().min(1).max(24 * 60).default(30),
 });
 
+const rescheduleMissedSchema = z.object({
+  targetDate: z.string().optional(),
+});
+
 const INBOX_GOAL_TITLE = "Rýchle úlohy";
 
 function todayISO(): string {
@@ -116,6 +120,65 @@ export async function calendarRoutes(app: FastifyInstance) {
       },
     });
     return reply.code(201).send(toDomainTaskInstance(instance));
+  });
+
+  // Only "scheduled" rows are still-actionable overdue tasks. A row already
+  // finalized to "missed" (by this same reschedule flow) has already had a
+  // fresh instance created for it, so it must not keep counting forever.
+  app.get("/calendar/missed-count", async (request) => {
+    const { workspaceId } = request.user;
+    const count = await prisma.taskInstance.count({
+      where: { workspaceId, status: "scheduled", scheduledDate: { lt: todayISO() } },
+    });
+    return { count };
+  });
+
+  /**
+   * Finalizes every overdue "scheduled" instance as "missed" — preserving
+   * accurate completion history for its original date — then creates one
+   * fresh "scheduled" instance per affected step on targetDate, linked back
+   * via rescheduledFrom. A step already occurring on targetDate is left
+   * alone rather than double-booked.
+   */
+  app.post("/calendar/reschedule-missed", async (request, reply) => {
+    const parsed = rescheduleMissedSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+    const { workspaceId } = request.user;
+    const today = todayISO();
+    const targetDate = parsed.data.targetDate ?? today;
+
+    const overdueRows = await prisma.taskInstance.findMany({
+      where: { workspaceId, status: "scheduled", scheduledDate: { lt: today } },
+    });
+
+    const existingOnTarget = await prisma.taskInstance.findMany({
+      where: { workspaceId, scheduledDate: targetDate },
+      select: { stepId: true },
+    });
+    const stepsOnTarget = new Set(existingOnTarget.map((r) => r.stepId));
+
+    let rescheduledCount = 0;
+    for (const row of overdueRows) {
+      await prisma.taskInstance.update({ where: { id: row.id }, data: { status: "missed" } });
+      if (stepsOnTarget.has(row.stepId)) continue;
+      await prisma.taskInstance.create({
+        data: {
+          workspaceId,
+          stepId: row.stepId,
+          goalId: row.goalId,
+          domain: row.domain,
+          title: row.title,
+          scheduledDate: targetDate,
+          durationMinutes: row.durationMinutes,
+          status: "scheduled",
+          rescheduledFrom: row.scheduledDate,
+        },
+      });
+      stepsOnTarget.add(row.stepId);
+      rescheduledCount++;
+    }
+
+    return reply.send({ rescheduledCount, targetDate });
   });
 
   app.patch("/calendar/instances/:id", async (request, reply) => {

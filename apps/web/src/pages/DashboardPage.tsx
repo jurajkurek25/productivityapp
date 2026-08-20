@@ -5,6 +5,7 @@ import type { EnergyState, PriorityReport } from "@productivityapp/core";
 import { api } from "../lib/api";
 import { Card } from "../components/Card";
 import { DomainBadge, domainDotClass } from "../components/DomainBadge";
+import { MissedTasksBanner } from "../components/MissedTasksBanner";
 import { NotificationToggle } from "../components/NotificationToggle";
 import { domainLabels, t } from "../lib/i18n";
 
@@ -100,13 +101,15 @@ export function DashboardPage() {
   const [priority, setPriority] = useState<PriorityReport | null>(null);
   const [loading, setLoading] = useState(true);
 
+  function loadReports() {
+    return Promise.all([api.getEnergy(), api.getPriority(7)]).then(([e, p]) => {
+      setEnergy(e);
+      setPriority(p);
+    });
+  }
+
   useEffect(() => {
-    Promise.all([api.getEnergy(), api.getPriority(7)])
-      .then(([e, p]) => {
-        setEnergy(e);
-        setPriority(p);
-      })
-      .finally(() => setLoading(false));
+    loadReports().finally(() => setLoading(false));
   }, []);
 
   if (loading) {
@@ -135,6 +138,7 @@ export function DashboardPage() {
           <ArrowRight size={14} className="text-slate-300" />
         </p>
       </div>
+      <MissedTasksBanner onRescheduled={loadReports} />
       <NotificationToggle />
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {energy && <EnergyCard energy={energy} />}

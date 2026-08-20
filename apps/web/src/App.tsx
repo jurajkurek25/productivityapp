@@ -9,6 +9,7 @@ import { GoalsPage } from "./pages/GoalsPage";
 import { GoalDetailPage } from "./pages/GoalDetailPage";
 import { CalendarPage } from "./pages/CalendarPage";
 import { StudyPage } from "./pages/StudyPage";
+import { SettingsPage } from "./pages/SettingsPage";
 
 function ProtectedShell({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -70,6 +71,14 @@ export default function App() {
         element={
           <ProtectedShell>
             <StudyPage />
+          </ProtectedShell>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedShell>
+            <SettingsPage />
           </ProtectedShell>
         }
       />

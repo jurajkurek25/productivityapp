@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { CalendarDays, LayoutDashboard, LogOut, Sparkles, Target } from "lucide-react";
+import { CalendarDays, LayoutDashboard, LogOut, Settings, Sparkles, Target } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { t } from "../lib/i18n";
 
@@ -8,6 +8,7 @@ const LINKS = [
   { to: "/goals", label: t.nav.goals, icon: Target },
   { to: "/calendar", label: t.nav.calendar, icon: CalendarDays },
   { to: "/study", label: t.nav.study, icon: Sparkles },
+  { to: "/settings", label: t.nav.settings, icon: Settings },
 ];
 
 export function Sidebar() {

@@ -8,6 +8,7 @@ import type {
   StudyPlan,
   SuggestedStep,
   TaskInstance,
+  WeeklyCapacityTemplate,
 } from "@productivityapp/core";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "/api";
@@ -113,6 +114,12 @@ export const api = {
   ) => request<TaskInstance>(`/calendar/instances/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
   quickAddTask: (data: { title: string; domain: LifeDomain; scheduledDate?: string; durationMinutes?: number }) =>
     request<TaskInstance>("/calendar/quick", { method: "POST", body: JSON.stringify(data) }),
+  getMissedCount: () => request<{ count: number }>("/calendar/missed-count"),
+  rescheduleMissed: (targetDate?: string) =>
+    request<{ rescheduledCount: number; targetDate: string }>("/calendar/reschedule-missed", {
+      method: "POST",
+      body: JSON.stringify({ targetDate }),
+    }),
 
   getEnergy: (date?: string) => request<EnergyState>(`/energy${date ? `?date=${date}` : ""}`),
   getPriority: (windowDays = 7) => request<PriorityReport>(`/priority?windowDays=${windowDays}`),
@@ -135,6 +142,10 @@ export const api = {
     request<void>("/push/subscribe", { method: "POST", body: JSON.stringify(subscription) }),
   unsubscribePush: (endpoint: string) =>
     request<void>("/push/unsubscribe", { method: "POST", body: JSON.stringify({ endpoint }) }),
+
+  getCapacity: () => request<WeeklyCapacityTemplate>("/workspace/capacity"),
+  updateCapacity: (data: WeeklyCapacityTemplate) =>
+    request<WeeklyCapacityTemplate>("/workspace/capacity", { method: "PUT", body: JSON.stringify(data) }),
 };
 
 export { ApiError };
