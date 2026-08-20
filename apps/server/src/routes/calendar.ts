@@ -1,10 +1,9 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { LIFE_DOMAINS, defaultEnergyEngine, scheduleRange } from "@productivityapp/core";
+import { LIFE_DOMAINS } from "@productivityapp/core";
 import { prisma } from "../lib/prisma.js";
-import { toDomainStep, toDomainTaskInstance } from "../lib/mappers.js";
-import { buildCompletionHistory } from "../lib/energyHistory.js";
-import { parseWeeklyCapacity } from "../lib/capacity.js";
+import { toDomainTaskInstance } from "../lib/mappers.js";
+import { generateSchedule } from "../lib/scheduling.js";
 
 const rangeQuerySchema = z.object({
   start: z.string(),
@@ -68,58 +67,14 @@ export async function calendarRoutes(app: FastifyInstance) {
     return rows.map(toDomainTaskInstance);
   });
 
-  /**
-   * Runs the scheduler for a date range: expands active steps' recurrence,
-   * infers today's energy state from recent completion history, and places
-   * new TaskInstances into whatever capacity remains after energy scaling.
-   * Safe to call repeatedly — it never re-schedules a step onto a date that
-   * already has an instance for it.
-   */
   app.post("/calendar/generate", async (request, reply) => {
     const parsed = generateSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
     const { workspaceId } = request.user;
     const { rangeStart, rangeEnd } = parsed.data;
 
-    const [workspace, stepRows, existingRows] = await Promise.all([
-      prisma.workspace.findUniqueOrThrow({ where: { id: workspaceId } }),
-      prisma.step.findMany({ where: { workspaceId, status: { in: ["pending", "active"] } } }),
-      prisma.taskInstance.findMany({ where: { workspaceId } }),
-    ]);
-
-    const today = todayISO();
-    const history = await buildCompletionHistory(workspaceId, today);
-    const energyState = defaultEnergyEngine.infer(history, today);
-
-    const result = scheduleRange({
-      steps: stepRows.map(toDomainStep),
-      existingInstances: existingRows.map(toDomainTaskInstance),
-      weeklyCapacity: parseWeeklyCapacity(workspace.weeklyCapacityJson),
-      energyByDate: (date) => ({ ...energyState, date }),
-      rangeStart,
-      rangeEnd,
-      makeId: () => crypto.randomUUID(),
-      now: () => new Date().toISOString(),
-    });
-
-    if (result.placed.length > 0) {
-      await prisma.taskInstance.createMany({
-        data: result.placed.map((p) => ({
-          id: p.id,
-          workspaceId: p.workspaceId,
-          stepId: p.stepId,
-          goalId: p.goalId,
-          domain: p.domain,
-          title: p.title,
-          scheduledDate: p.scheduledDate,
-          durationMinutes: p.durationMinutes,
-          status: "scheduled",
-          rescheduledFrom: p.rescheduledFrom ?? null,
-        })),
-      });
-    }
-
-    return reply.send({ energyState, placed: result.placed, unplaced: result.unplaced });
+    const result = await generateSchedule(workspaceId, rangeStart, rangeEnd);
+    return reply.send(result);
   });
 
   /**
