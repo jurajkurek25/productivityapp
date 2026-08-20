@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
-import { NavBar } from "./components/NavBar";
+import { Sidebar } from "./components/Sidebar";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { DashboardPage } from "./pages/DashboardPage";
@@ -14,9 +14,11 @@ function ProtectedShell({ children }: { children: React.ReactNode }) {
   if (loading) return <div className="p-8 text-center text-slate-400">Loading…</div>;
   if (!user) return <Navigate to="/login" replace />;
   return (
-    <div className="min-h-screen">
-      <NavBar />
-      <main className="mx-auto max-w-5xl px-6 py-8">{children}</main>
+    <div className="flex min-h-screen bg-slate-50">
+      <Sidebar />
+      <main className="min-w-0 flex-1 overflow-y-auto px-8 py-8">
+        <div className="mx-auto max-w-4xl">{children}</div>
+      </main>
     </div>
   );
 }

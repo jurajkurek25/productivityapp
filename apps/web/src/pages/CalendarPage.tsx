@@ -1,8 +1,12 @@
 import { FormEvent, useEffect, useState } from "react";
+import { CheckCircle2, ChevronLeft, ChevronRight, Circle, Pencil, Sparkles } from "lucide-react";
 import type { TaskInstance } from "@productivityapp/core";
 import { api } from "../lib/api";
 import { addDaysISO, formatShort, todayISO } from "../lib/date";
 import { DomainBadge, domainDotClass } from "../components/DomainBadge";
+import { Button } from "../components/Button";
+
+const fieldClass = "rounded border border-slate-300 px-1.5 py-1 text-xs focus:border-brand-500 focus:outline-none";
 
 function startOfWeek(date: string): string {
   const dow = new Date(date + "T00:00:00Z").getUTCDay();
@@ -77,41 +81,50 @@ export function CalendarPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Calendar</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-slate-900">Calendar</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            {formatShort(weekStart)} – {formatShort(weekEnd)}
+          </p>
+        </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setWeekStart(addDaysISO(weekStart, -7))}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50"
-          >
-            ← Prev
-          </button>
-          <button
-            onClick={() => setWeekStart(startOfWeek(todayISO()))}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50"
-          >
-            Today
-          </button>
-          <button
-            onClick={() => setWeekStart(addDaysISO(weekStart, 7))}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50"
-          >
-            Next →
-          </button>
-          <button
-            onClick={handleGenerate}
-            disabled={generating}
-            className="ml-2 rounded-md bg-slate-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
-          >
+          <div className="flex items-center overflow-hidden rounded-lg border border-slate-300">
+            <button
+              onClick={() => setWeekStart(addDaysISO(weekStart, -7))}
+              className="p-2 text-slate-500 hover:bg-slate-50"
+              title="Previous week"
+            >
+              <ChevronLeft size={16} strokeWidth={2.25} />
+            </button>
+            <button
+              onClick={() => setWeekStart(startOfWeek(todayISO()))}
+              className="border-x border-slate-300 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+            >
+              Today
+            </button>
+            <button
+              onClick={() => setWeekStart(addDaysISO(weekStart, 7))}
+              className="p-2 text-slate-500 hover:bg-slate-50"
+              title="Next week"
+            >
+              <ChevronRight size={16} strokeWidth={2.25} />
+            </button>
+          </div>
+          <Button variant="primary" icon={Sparkles} onClick={handleGenerate} disabled={generating}>
             {generating ? "Generating…" : "Generate schedule"}
-          </button>
+          </Button>
         </div>
       </div>
 
-      {message && <p className="rounded-md bg-slate-100 px-4 py-2 text-sm text-slate-700">{message}</p>}
+      {message && <p className="rounded-lg bg-brand-50 px-4 py-2.5 text-sm text-brand-800">{message}</p>}
 
       {loading ? (
-        <p className="text-slate-400">Loading…</p>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-7">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <div key={i} className="h-40 animate-pulse rounded-xl border border-slate-200/80 bg-white" />
+          ))}
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-7">
           {days.map((date) => {
@@ -122,9 +135,11 @@ export function CalendarPage() {
             return (
               <div
                 key={date}
-                className={`rounded-xl border bg-white p-3 ${isToday ? "border-slate-900" : "border-slate-200"}`}
+                className={`rounded-xl border bg-white p-3 shadow-card ${
+                  isToday ? "border-brand-300 ring-1 ring-brand-100" : "border-slate-200/80"
+                }`}
               >
-                <p className={`mb-2 text-xs font-medium ${isToday ? "text-slate-900" : "text-slate-400"}`}>
+                <p className={`mb-2 text-xs font-semibold ${isToday ? "text-brand-700" : "text-slate-400"}`}>
                   {formatShort(date)}
                 </p>
                 <div className="space-y-2">
@@ -134,12 +149,12 @@ export function CalendarPage() {
                       <form
                         key={inst.id}
                         onSubmit={handleEditSubmit}
-                        className="space-y-1.5 rounded-md border border-slate-300 p-2"
+                        className="space-y-1.5 rounded-lg border border-brand-300 bg-brand-50/40 p-2"
                       >
                         <input
                           value={editForm.title}
                           onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                          className="w-full rounded border border-slate-300 px-1.5 py-1 text-xs"
+                          className={`${fieldClass} w-full`}
                           required
                         />
                         <div className="flex gap-1">
@@ -147,34 +162,34 @@ export function CalendarPage() {
                             type="date"
                             value={editForm.scheduledDate}
                             onChange={(e) => setEditForm({ ...editForm, scheduledDate: e.target.value })}
-                            className="w-full rounded border border-slate-300 px-1 py-1 text-[10px]"
+                            className={`${fieldClass} flex-1 text-[10px]`}
                           />
                           <input
                             type="number"
                             min={5}
                             value={editForm.durationMinutes}
                             onChange={(e) => setEditForm({ ...editForm, durationMinutes: Number(e.target.value) })}
-                            className="w-14 rounded border border-slate-300 px-1 py-1 text-[10px]"
+                            className={`${fieldClass} w-14 text-[10px]`}
                             title="Minutes"
                           />
                         </div>
-                        <div className="flex gap-2">
-                          <button type="submit" className="text-[10px] font-medium text-emerald-600 hover:underline">
+                        <div className="flex gap-2 pt-0.5">
+                          <button type="submit" className="text-[11px] font-semibold text-brand-600 hover:text-brand-700">
                             Save
                           </button>
                           <button
                             type="button"
                             onClick={() => setEditingId(null)}
-                            className="text-[10px] font-medium text-slate-400 hover:underline"
+                            className="text-[11px] font-medium text-slate-400 hover:text-slate-600"
                           >
                             Cancel
                           </button>
                         </div>
                       </form>
                     ) : (
-                      <div key={inst.id} className="rounded-md border border-slate-100 p-2">
-                        <div className="flex items-center gap-1.5">
-                          <span className={`h-1.5 w-1.5 rounded-full ${domainDotClass(inst.domain)}`} />
+                      <div key={inst.id} className="rounded-lg border border-slate-100 p-2">
+                        <div className="flex items-start gap-1.5">
+                          <span className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${domainDotClass(inst.domain)}`} />
                           <p
                             className={`text-xs font-medium leading-snug ${
                               inst.status === "completed" ? "text-slate-300 line-through" : "text-slate-700"
@@ -183,28 +198,34 @@ export function CalendarPage() {
                             {inst.title}
                           </p>
                         </div>
-                        <p className="mt-0.5 text-[10px] text-slate-400">{inst.durationMinutes}m</p>
-                        <div className="mt-1 flex gap-2">
+                        <p className="ml-3 mt-0.5 text-[10px] text-slate-400">{inst.durationMinutes}m</p>
+                        <div className="ml-3 mt-1.5 flex items-center gap-2.5">
                           {inst.status !== "completed" && (
                             <>
                               <button
                                 onClick={() => setStatus(inst.id, "completed")}
-                                className="text-[10px] font-medium text-emerald-600 hover:underline"
+                                className="flex items-center gap-1 text-[11px] font-medium text-emerald-600 hover:text-emerald-700"
+                                title="Mark done"
                               >
+                                <CheckCircle2 size={12} strokeWidth={2.5} />
                                 Done
                               </button>
                               <button
                                 onClick={() => setStatus(inst.id, "skipped")}
-                                className="text-[10px] font-medium text-slate-400 hover:underline"
+                                className="flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-slate-600"
+                                title="Skip"
                               >
+                                <Circle size={12} strokeWidth={2.5} />
                                 Skip
                               </button>
                             </>
                           )}
                           <button
                             onClick={() => startEdit(inst)}
-                            className="text-[10px] font-medium text-slate-500 hover:underline"
+                            className="flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-slate-600"
+                            title="Edit"
                           >
+                            <Pencil size={11} strokeWidth={2.5} />
                             Edit
                           </button>
                         </div>

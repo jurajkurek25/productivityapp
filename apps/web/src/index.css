@@ -3,5 +3,11 @@
 @tailwind utilities;
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  @apply bg-slate-50 font-sans text-slate-900 antialiased;
+}
+
+h1,
+h2,
+h3 {
+  @apply font-display;
 }
