@@ -3,6 +3,7 @@ import { z } from "zod";
 import { LIFE_DOMAINS } from "@productivityapp/core";
 import { prisma } from "../lib/prisma.js";
 import { parseWeeklyCapacity } from "../lib/capacity.js";
+import { toDomainStep, toDomainTaskInstance } from "../lib/mappers.js";
 
 const dayCapacitySchema = z.object(
   Object.fromEntries(LIFE_DOMAINS.map((d) => [d, z.number().min(0).max(24 * 60)])) as Record<
@@ -34,5 +35,27 @@ export async function workspaceRoutes(app: FastifyInstance) {
       data: { weeklyCapacityJson: JSON.stringify(parsed.data) },
     });
     return parsed.data;
+  });
+
+  /** Full data export as a downloadable JSON file — the only backup path for a single-SQLite-file deployment. */
+  app.get("/workspace/export", async (request, reply) => {
+    const { workspaceId } = request.user;
+    const [workspace, goals, steps, instances] = await Promise.all([
+      prisma.workspace.findUniqueOrThrow({ where: { id: workspaceId } }),
+      prisma.goal.findMany({ where: { workspaceId } }),
+      prisma.step.findMany({ where: { workspaceId } }),
+      prisma.taskInstance.findMany({ where: { workspaceId } }),
+    ]);
+
+    const filename = `balance-export-${new Date().toISOString().slice(0, 10)}.json`;
+    reply.header("Content-Disposition", `attachment; filename="${filename}"`);
+    return reply.send({
+      exportedAt: new Date().toISOString(),
+      workspace: { id: workspace.id, name: workspace.name },
+      weeklyCapacity: parseWeeklyCapacity(workspace.weeklyCapacityJson),
+      goals,
+      steps: steps.map(toDomainStep),
+      taskInstances: instances.map(toDomainTaskInstance),
+    });
   });
 }

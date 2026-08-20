@@ -14,6 +14,11 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(8),
+});
+
 export async function authRoutes(app: FastifyInstance) {
   app.post("/auth/register", async (request, reply) => {
     const parsed = registerSchema.safeParse(request.body);
@@ -69,6 +74,21 @@ export async function authRoutes(app: FastifyInstance) {
       user: { id: user.id, email: user.email, name: user.name },
       workspace: { id: membership.workspace.id, name: membership.workspace.name },
     });
+  });
+
+  app.post("/auth/change-password", { preHandler: [app.authenticate] }, async (request, reply) => {
+    const parsed = changePasswordSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+    const { userId } = request.user;
+    const { currentPassword, newPassword } = parsed.data;
+
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    const ok = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!ok) return reply.code(401).send({ error: "Nesprávne súčasné heslo" });
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+    return reply.code(204).send();
   });
 
   app.get("/me", { preHandler: [app.authenticate] }, async (request, reply) => {

@@ -60,6 +60,8 @@ export const api = {
   login: (email: string, password: string) =>
     request<AuthResponse>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
   me: () => request<{ user: AuthResponse["user"]; workspace: AuthResponse["workspace"] }>("/me"),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    request<void>("/auth/change-password", { method: "POST", body: JSON.stringify({ currentPassword, newPassword }) }),
 
   listGoals: () => request<Goal[]>("/goals"),
   createGoal: (data: { domain: LifeDomain; title: string; description?: string; targetDate?: string }) =>
@@ -146,6 +148,15 @@ export const api = {
   getCapacity: () => request<WeeklyCapacityTemplate>("/workspace/capacity"),
   updateCapacity: (data: WeeklyCapacityTemplate) =>
     request<WeeklyCapacityTemplate>("/workspace/capacity", { method: "PUT", body: JSON.stringify(data) }),
+
+  exportData: async (): Promise<Blob> => {
+    const token = getToken();
+    const res = await fetch(`${API_BASE}/workspace/export`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw new ApiError(res.status, res.statusText);
+    return res.blob();
+  },
 };
 
 export { ApiError };
