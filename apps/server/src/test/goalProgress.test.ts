@@ -190,6 +190,7 @@ describe("goal progress", () => {
       expect(body.weeklyTargetMinutes).toBeNull();
       expect(body.weeklyTargetMet).toBeNull();
       expect(body.currentWeekMinutes).toBe(0);
+      expect(body.weeklyTargetStreak).toBeNull();
     });
 
     it("reports weeklyTargetMet=true once this week's completed minutes reach the target", async () => {
@@ -224,6 +225,80 @@ describe("goal progress", () => {
       expect(body.weeklyTargetMinutes).toBe(180);
       expect(body.currentWeekMinutes).toBe(0);
       expect(body.weeklyTargetMet).toBe(false);
+    });
+
+    it("counts consecutive met weeks going backward from the most recent met week", async () => {
+      const user = await registerTestUser(app);
+      const goal = await createGoal(user.token, undefined, 100);
+      const step = await createOnceStep(user.workspaceId, goal.id, 10_000);
+      // This week, last week, and the week before that all meet the 100 min target.
+      await completeInstance(user.workspaceId, goal.id, step.id, todayISO(), 100);
+      await completeInstance(user.workspaceId, goal.id, step.id, addDays(todayISO(), -7), 100);
+      await completeInstance(user.workspaceId, goal.id, step.id, addDays(todayISO(), -14), 100);
+      // Two weeks before that falls short -> streak stops there.
+      await completeInstance(user.workspaceId, goal.id, step.id, addDays(todayISO(), -21), 10);
+
+      const res = await app.inject({
+        method: "GET",
+        url: `/api/goals/${goal.id}/progress`,
+        headers: authHeaders(user.token),
+      });
+      expect(res.json().weeklyTargetStreak).toBe(3);
+    });
+
+    it("counts from last week (not zero) when this week is still in progress and hasn't met target yet", async () => {
+      const user = await registerTestUser(app);
+      const goal = await createGoal(user.token, undefined, 100);
+      const step = await createOnceStep(user.workspaceId, goal.id, 10_000);
+      // Last week met the target; this week has no activity yet.
+      await completeInstance(user.workspaceId, goal.id, step.id, addDays(todayISO(), -7), 100);
+
+      const res = await app.inject({
+        method: "GET",
+        url: `/api/goals/${goal.id}/progress`,
+        headers: authHeaders(user.token),
+      });
+      const body = res.json();
+      expect(body.weeklyTargetMet).toBe(false);
+      expect(body.weeklyTargetStreak).toBe(1);
+    });
+
+    it("reports a streak of 0 when last week also missed the target", async () => {
+      const user = await registerTestUser(app);
+      const goal = await createGoal(user.token, undefined, 100);
+      const step = await createOnceStep(user.workspaceId, goal.id, 10_000);
+      await completeInstance(user.workspaceId, goal.id, step.id, addDays(todayISO(), -7), 20);
+
+      const res = await app.inject({
+        method: "GET",
+        url: `/api/goals/${goal.id}/progress`,
+        headers: authHeaders(user.token),
+      });
+      expect(res.json().weeklyTargetStreak).toBe(0);
+    });
+  });
+
+  describe("weekly-targets list", () => {
+    it("lists only active goals with a weekly target, including their streak", async () => {
+      const user = await registerTestUser(app);
+      const withTarget = await createGoal(user.token, undefined, 60);
+      const step = await createOnceStep(user.workspaceId, withTarget.id, 1000);
+      await completeInstance(user.workspaceId, withTarget.id, step.id, todayISO(), 60);
+
+      const withoutTarget = await createGoal(user.token);
+      void withoutTarget;
+
+      const res = await app.inject({
+        method: "GET",
+        url: "/api/goals/weekly-targets",
+        headers: authHeaders(user.token),
+      });
+      expect(res.statusCode).toBe(200);
+      const body = res.json();
+      expect(body).toHaveLength(1);
+      expect(body[0].goalId).toBe(withTarget.id);
+      expect(body[0].weeklyTargetMet).toBe(true);
+      expect(body[0].weeklyTargetStreak).toBe(1);
     });
   });
 

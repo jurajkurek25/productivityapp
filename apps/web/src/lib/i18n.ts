@@ -41,6 +41,7 @@ export const t = {
     goals: "Ciele",
     calendar: "Kalendár",
     study: "Štúdium",
+    review: "Týždenný súhrn",
     settings: "Nastavenia",
     logout: "Odhlásiť sa",
   },
@@ -98,6 +99,15 @@ export const t = {
     neglectedGoalsBanner: (count: number) => `${count} cieľov je zanedbaných.`,
     neglectedGoalNoActivity: (title: string) => `${title} — žiadna zaznamenaná aktivita`,
     neglectedGoalDaysAgo: (title: string, days: number) => `${title} — naposledy pred ${days} dňami`,
+    reviewLink: "Zobraziť týždenný súhrn",
+  },
+  weeklyReview: {
+    title: "Týždenný súhrn",
+    subtitle: "Rýchly prehľad tohto týždňa naprieč všetkými cieľmi.",
+    weeklyTargetsTitle: "Týždenné ciele",
+    weeklyTargetsEmpty: "Zatiaľ nemáš nastavený žiadny týždenný cieľ.",
+    met: "Splnený",
+    notMet: "Nesplnený",
   },
   goals: {
     title: "Ciele",
@@ -146,6 +156,7 @@ export const t = {
     weeklyTargetLabel: (done: number, target: number) => `Tento týždeň: ${done} / ${target} min`,
     weeklyTargetMet: "Cieľ splnený",
     weeklyTargetUnderway: "Ešte nesplnený",
+    weeklyStreakLabel: (n: number) => `${n} týždňov v rade`,
   },
   recurrenceLabel: {
     once: "Jednorazovo",

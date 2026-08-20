@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, Flame, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import { LIFE_DOMAINS, type Goal, type GoalStatus, type LifeDomain, type RecurrenceFrequency, type Step, type SuggestedStep } from "@productivityapp/core";
 import { api, type GoalProgress } from "../lib/api";
 import { DomainBadge } from "../components/DomainBadge";
@@ -104,6 +104,12 @@ function WeeklyTargetSection({ progress }: { progress: GoalProgress }) {
           style={{ width: `${Math.min(100, (progress.currentWeekMinutes / progress.weeklyTargetMinutes) * 100)}%` }}
         />
       </div>
+      {!!progress.weeklyTargetStreak && (
+        <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-amber-600">
+          <Flame size={14} strokeWidth={2.25} />
+          {t.goalDetail.weeklyStreakLabel(progress.weeklyTargetStreak)}
+        </div>
+      )}
     </div>
   );
 }

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { LIFE_DOMAINS, suggestStepsForGoal } from "@productivityapp/core";
 import { prisma } from "../lib/prisma.js";
 import { toDomainStep } from "../lib/mappers.js";
-import { computeGoalProgress, listGoalsBehindPace } from "../lib/goalProgress.js";
+import { computeGoalProgress, listGoalsBehindPace, listGoalsWithWeeklyTargets } from "../lib/goalProgress.js";
 import { computeGoalTimeInvestment } from "../lib/goalTimeInvestment.js";
 import { listNeglectedGoals } from "../lib/neglectedGoals.js";
 import { computeGoalInvestmentTrend } from "../lib/goalInvestmentTrend.js";
@@ -52,6 +52,12 @@ export async function goalRoutes(app: FastifyInstance) {
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
     const { workspaceId } = request.user;
     return computeGoalTimeInvestment(workspaceId, parsed.data.windowDays ?? 7);
+  });
+
+  /** Active goals with a self-set weekly time budget — the Weekly Review page's data source. */
+  app.get("/goals/weekly-targets", async (request) => {
+    const { workspaceId } = request.user;
+    return listGoalsWithWeeklyTargets(workspaceId);
   });
 
   /** Active goals with no completed activity in the window — catches goals with no targetDate that just stall. */

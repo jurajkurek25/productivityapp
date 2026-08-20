@@ -10,6 +10,7 @@ import { GoalsPage } from "./pages/GoalsPage";
 import { GoalDetailPage } from "./pages/GoalDetailPage";
 import { CalendarPage } from "./pages/CalendarPage";
 import { StudyPage } from "./pages/StudyPage";
+import { WeeklyReviewPage } from "./pages/WeeklyReviewPage";
 import { SettingsPage } from "./pages/SettingsPage";
 
 function ProtectedShell({ children }: { children: React.ReactNode }) {
@@ -73,6 +74,14 @@ export default function App() {
         element={
           <ProtectedShell>
             <StudyPage />
+          </ProtectedShell>
+        }
+      />
+      <Route
+        path="/review"
+        element={
+          <ProtectedShell>
+            <WeeklyReviewPage />
           </ProtectedShell>
         }
       />

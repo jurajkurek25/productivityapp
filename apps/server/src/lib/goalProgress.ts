@@ -24,7 +24,11 @@ export interface GoalProgress {
   currentWeekMinutes: number;
   /** Whether currentWeekMinutes has reached weeklyTargetMinutes — null when no target is set. */
   weeklyTargetMet: boolean | null;
+  /** Consecutive weeks (including this week, only once it's met) where weeklyTargetMinutes was reached — null when no target is set. */
+  weeklyTargetStreak: number | null;
 }
+
+const STREAK_MAX_WEEKS = 104;
 
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
@@ -89,6 +93,25 @@ export async function computeGoalProgress(workspaceId: string, goalId: string): 
     .reduce((sum, i) => sum + i.durationMinutes, 0);
   const weeklyTargetMet = goal.weeklyTargetMinutes == null ? null : currentWeekMinutes >= goal.weeklyTargetMinutes;
 
+  let weeklyTargetStreak: number | null = null;
+  if (goal.weeklyTargetMinutes != null) {
+    const target = goal.weeklyTargetMinutes;
+    const weekMinutesAt = (weekStart: string) => {
+      const weekEnd = addDays(weekStart, 6);
+      return completedInstances
+        .filter((i) => i.scheduledDate >= weekStart && i.scheduledDate <= weekEnd)
+        .reduce((sum, i) => sum + i.durationMinutes, 0);
+    };
+    let streak = 0;
+    let cursor = weeklyTargetMet ? currentWeekStart : addDays(currentWeekStart, -7);
+    for (let i = 0; i < STREAK_MAX_WEEKS; i++) {
+      if (weekMinutesAt(cursor) < target) break;
+      streak++;
+      cursor = addDays(cursor, -7);
+    }
+    weeklyTargetStreak = streak;
+  }
+
   let status: GoalProgressStatus;
   if (!goal.targetDate) {
     status = "no_deadline";
@@ -116,6 +139,7 @@ export async function computeGoalProgress(workspaceId: string, goalId: string): 
     weeklyTargetMinutes: goal.weeklyTargetMinutes,
     currentWeekMinutes,
     weeklyTargetMet,
+    weeklyTargetStreak,
   };
 }
 
@@ -143,6 +167,36 @@ export async function listGoalsBehindPace(workspaceId: string): Promise<BehindPa
         remainingMinutes: progress.remainingMinutes,
       });
     }
+  }
+  return results;
+}
+
+export interface WeeklyTargetGoal {
+  goalId: string;
+  title: string;
+  weeklyTargetMinutes: number;
+  currentWeekMinutes: number;
+  weeklyTargetMet: boolean;
+  weeklyTargetStreak: number;
+}
+
+/** Active goals with a self-set weekly time budget — the Weekly Review's data source for that section. */
+export async function listGoalsWithWeeklyTargets(workspaceId: string): Promise<WeeklyTargetGoal[]> {
+  const goals = await prisma.goal.findMany({
+    where: { workspaceId, status: "active", weeklyTargetMinutes: { not: null } },
+  });
+
+  const results: WeeklyTargetGoal[] = [];
+  for (const goal of goals) {
+    const progress = await computeGoalProgress(workspaceId, goal.id);
+    results.push({
+      goalId: goal.id,
+      title: goal.title,
+      weeklyTargetMinutes: progress.weeklyTargetMinutes!,
+      currentWeekMinutes: progress.currentWeekMinutes,
+      weeklyTargetMet: progress.weeklyTargetMet!,
+      weeklyTargetStreak: progress.weeklyTargetStreak!,
+    });
   }
   return results;
 }
