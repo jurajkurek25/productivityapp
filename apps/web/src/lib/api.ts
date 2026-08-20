@@ -124,6 +124,8 @@ export const api = {
     }),
 
   getEnergy: (date?: string) => request<EnergyState>(`/energy${date ? `?date=${date}` : ""}`),
+  getEnergyTrend: (days = 30) =>
+    request<{ date: string; score: number; completionRate: number | null }[]>(`/energy/trend?days=${days}`),
   getPriority: (windowDays = 7) => request<PriorityReport>(`/priority?windowDays=${windowDays}`),
 
   createStudyPlan: (data: {

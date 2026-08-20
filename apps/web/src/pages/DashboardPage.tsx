@@ -5,8 +5,10 @@ import type { EnergyState, PriorityReport } from "@productivityapp/core";
 import { api } from "../lib/api";
 import { Card } from "../components/Card";
 import { DomainBadge, domainDotClass } from "../components/DomainBadge";
+import { LineChart } from "../components/LineChart";
 import { MissedTasksBanner } from "../components/MissedTasksBanner";
 import { NotificationToggle } from "../components/NotificationToggle";
+import { formatShort } from "../lib/date";
 import { domainLabels, t } from "../lib/i18n";
 
 const TREND_META = {
@@ -96,6 +98,25 @@ function PriorityCard({ report }: { report: PriorityReport }) {
   );
 }
 
+function TrendCard() {
+  const [points, setPoints] = useState<{ date: string; score: number; completionRate: number | null }[] | null>(null);
+
+  useEffect(() => {
+    api.getEnergyTrend(30).then(setPoints);
+  }, []);
+
+  return (
+    <Card>
+      <h2 className="mb-4 text-sm font-medium text-slate-500">{t.dashboard.trendTitle}</h2>
+      {points === null ? (
+        <div className="h-[140px] animate-pulse rounded-lg bg-slate-100" />
+      ) : (
+        <LineChart points={points.map((p) => ({ label: formatShort(p.date), value: p.score }))} min={0} max={100} />
+      )}
+    </Card>
+  );
+}
+
 export function DashboardPage() {
   const [energy, setEnergy] = useState<EnergyState | null>(null);
   const [priority, setPriority] = useState<PriorityReport | null>(null);
@@ -144,6 +165,7 @@ export function DashboardPage() {
         {energy && <EnergyCard energy={energy} />}
         {priority && <PriorityCard report={priority} />}
       </div>
+      <TrendCard />
     </div>
   );
 }

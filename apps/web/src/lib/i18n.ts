@@ -88,6 +88,8 @@ export const t = {
     missedBanner: (count: number) => `Máš ${count} zmeškaných úloh.`,
     rescheduleMissed: "Presunúť na dnes",
     rescheduling: "Presúvam…",
+    trendTitle: "Trend energie (30 dní)",
+    trendEmpty: "Zatiaľ nemáš dosť histórie na graf trendu.",
   },
   goals: {
     title: "Ciele",
