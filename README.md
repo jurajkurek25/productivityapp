@@ -116,10 +116,24 @@ means the phone itself).
 `packages/core` has the real test suite (26 tests) covering the energy
 engine, recurrence expansion, the scheduler's capacity/overflow behavior,
 the study planner, and the priority tracker — the parts of the system worth
-unit testing in isolation. The server and both frontends were verified by
-running them end-to-end (registration → goal → AI-style suggestions → accept
-step → generate schedule → mark complete, and the study-plan flow) rather
-than with a separate test harness.
+unit testing in isolation. The server and web app were verified by running
+them end-to-end in a headless browser (registration → goal → AI-style
+suggestions → accept step → generate schedule → mark complete, and the
+study-plan flow).
+
+The mobile app was verified the same way via Expo's web target
+(`pnpm --filter mobile exec expo start --web`), since no iOS/Android
+simulator is available in every environment this was built in. That
+confirmed auth, the dashboard (real energy/balance data), and goal
+creation/listing all work end-to-end against the live API. One thing it
+could **not** confirm: `@react-navigation/native-stack` (used for the
+goal-detail screen) doesn't run under react-native-web — it depends on
+native screen primitives — so pushing into goal detail crashes in the web
+preview specifically. That's a known limitation of that library on web, not
+a bug in this app's code, and native-stack is the right choice to keep for
+real iOS/Android use (better performance/feel than the JS-based
+alternative). **Recommendation:** do a pass with Expo Go or a simulator on
+your machine before shipping, especially for in-app navigation.
 
 ## Notable API endpoints
 
