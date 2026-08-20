@@ -27,7 +27,7 @@ export async function buildApp() {
   // trustProxy: rate limiting (and any future IP-based logic) needs the
   // real client IP from X-Forwarded-For, not the reverse proxy's own IP —
   // this deployment always sits behind one (CloudPanel/nginx in production).
-  const app = Fastify({ logger: true, trustProxy: true });
+  const app = Fastify({ logger: process.env.NODE_ENV !== "test", trustProxy: true });
 
   await app.register(cors, {
     origin: process.env.CORS_ORIGIN?.split(",") ?? true,
