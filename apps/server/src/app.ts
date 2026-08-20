@@ -12,6 +12,7 @@ import { calendarRoutes } from "./routes/calendar.js";
 import { energyRoutes } from "./routes/energy.js";
 import { priorityRoutes } from "./routes/priority.js";
 import { studyRoutes } from "./routes/study.js";
+import { pushRoutes } from "./routes/push.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -41,6 +42,7 @@ export async function buildApp() {
       await api.register(energyRoutes);
       await api.register(priorityRoutes);
       await api.register(studyRoutes);
+      await api.register(pushRoutes);
     },
     { prefix: "/api" }
   );

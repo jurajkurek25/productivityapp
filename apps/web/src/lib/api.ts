@@ -111,6 +111,8 @@ export const api = {
       durationMinutes: number;
     }>
   ) => request<TaskInstance>(`/calendar/instances/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+  quickAddTask: (data: { title: string; domain: LifeDomain; scheduledDate?: string; durationMinutes?: number }) =>
+    request<TaskInstance>("/calendar/quick", { method: "POST", body: JSON.stringify(data) }),
 
   getEnergy: (date?: string) => request<EnergyState>(`/energy${date ? `?date=${date}` : ""}`),
   getPriority: (windowDays = 7) => request<PriorityReport>(`/priority?windowDays=${windowDays}`),
@@ -126,6 +128,13 @@ export const api = {
       method: "POST",
       body: JSON.stringify(data),
     }),
+
+  getPushPublicKey: () => request<{ publicKey: string }>("/push/public-key"),
+  getPushStatus: () => request<{ subscribed: boolean }>("/push/status"),
+  subscribePush: (subscription: PushSubscriptionJSON) =>
+    request<void>("/push/subscribe", { method: "POST", body: JSON.stringify(subscription) }),
+  unsubscribePush: (endpoint: string) =>
+    request<void>("/push/unsubscribe", { method: "POST", body: JSON.stringify({ endpoint }) }),
 };
 
 export { ApiError };

@@ -5,6 +5,7 @@ import type { EnergyState, PriorityReport } from "@productivityapp/core";
 import { api } from "../lib/api";
 import { Card } from "../components/Card";
 import { DomainBadge, domainDotClass } from "../components/DomainBadge";
+import { NotificationToggle } from "../components/NotificationToggle";
 import { domainLabels, t } from "../lib/i18n";
 
 const TREND_META = {
@@ -134,6 +135,7 @@ export function DashboardPage() {
           <ArrowRight size={14} className="text-slate-300" />
         </p>
       </div>
+      <NotificationToggle />
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {energy && <EnergyCard energy={energy} />}
         {priority && <PriorityCard report={priority} />}

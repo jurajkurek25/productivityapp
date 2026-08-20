@@ -1,11 +1,11 @@
 import { FormEvent, useEffect, useState } from "react";
-import { CheckCircle2, ChevronLeft, ChevronRight, Circle, Pencil, Sparkles } from "lucide-react";
-import type { TaskInstance } from "@productivityapp/core";
+import { CheckCircle2, ChevronLeft, ChevronRight, Circle, Pencil, Plus, Sparkles } from "lucide-react";
+import { LIFE_DOMAINS, type LifeDomain, type TaskInstance } from "@productivityapp/core";
 import { api } from "../lib/api";
 import { addDaysISO, formatShort, todayISO } from "../lib/date";
 import { DomainBadge, domainDotClass } from "../components/DomainBadge";
 import { Button } from "../components/Button";
-import { t } from "../lib/i18n";
+import { domainLabels, t } from "../lib/i18n";
 
 const fieldClass = "rounded border border-slate-300 px-1.5 py-1 text-xs focus:border-brand-500 focus:outline-none";
 
@@ -20,6 +20,14 @@ interface InstanceFormState {
   scheduledDate: string;
 }
 
+interface QuickAddFormState {
+  title: string;
+  domain: LifeDomain;
+  durationMinutes: number;
+}
+
+const EMPTY_QUICK_ADD: QuickAddFormState = { title: "", domain: "business", durationMinutes: 30 };
+
 export function CalendarPage() {
   const [weekStart, setWeekStart] = useState(() => startOfWeek(todayISO()));
   const [instances, setInstances] = useState<TaskInstance[]>([]);
@@ -28,6 +36,8 @@ export function CalendarPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<InstanceFormState | null>(null);
+  const [quickAddDate, setQuickAddDate] = useState<string | null>(null);
+  const [quickAddForm, setQuickAddForm] = useState<QuickAddFormState>(EMPTY_QUICK_ADD);
 
   const weekEnd = addDaysISO(weekStart, 6);
   const days = Array.from({ length: 7 }, (_, i) => addDaysISO(weekStart, i));
@@ -80,6 +90,24 @@ export function CalendarPage() {
       scheduledDate: editForm.scheduledDate,
     });
     setEditingId(null);
+    load();
+  }
+
+  function startQuickAdd(date: string) {
+    setQuickAddDate(date);
+    setQuickAddForm(EMPTY_QUICK_ADD);
+  }
+
+  async function submitQuickAdd(e: FormEvent) {
+    e.preventDefault();
+    if (!quickAddDate || !quickAddForm.title.trim()) return;
+    await api.quickAddTask({
+      title: quickAddForm.title.trim(),
+      domain: quickAddForm.domain,
+      scheduledDate: quickAddDate,
+      durationMinutes: quickAddForm.durationMinutes,
+    });
+    setQuickAddDate(null);
     load();
   }
 
@@ -239,6 +267,62 @@ export function CalendarPage() {
                     )
                   )}
                 </div>
+
+                {quickAddDate === date ? (
+                  <form onSubmit={submitQuickAdd} className="mt-2 space-y-1.5 rounded-lg border border-brand-300 bg-brand-50/40 p-2">
+                    <input
+                      autoFocus
+                      value={quickAddForm.title}
+                      onChange={(e) => setQuickAddForm({ ...quickAddForm, title: e.target.value })}
+                      placeholder={t.calendar.quickAddPlaceholder}
+                      className={`${fieldClass} w-full`}
+                      required
+                    />
+                    <div className="flex gap-1">
+                      <select
+                        value={quickAddForm.domain}
+                        onChange={(e) => setQuickAddForm({ ...quickAddForm, domain: e.target.value as LifeDomain })}
+                        className={`${fieldClass} flex-1 text-[10px]`}
+                      >
+                        {LIFE_DOMAINS.map((d) => (
+                          <option key={d} value={d}>
+                            {domainLabels[d]}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="number"
+                        min={5}
+                        value={quickAddForm.durationMinutes}
+                        onChange={(e) => setQuickAddForm({ ...quickAddForm, durationMinutes: Number(e.target.value) })}
+                        className={`${fieldClass} w-14 text-[10px]`}
+                        title={t.calendar.minutesTitle}
+                      />
+                    </div>
+                    <div className="flex gap-2 pt-0.5">
+                      <button type="submit" className="text-[11px] font-semibold text-brand-600 hover:text-brand-700">
+                        {t.calendar.quickAddSave}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setQuickAddDate(null)}
+                        className="text-[11px] font-medium text-slate-400 hover:text-slate-600"
+                      >
+                        {t.common.cancel}
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <button
+                    onClick={() => startQuickAdd(date)}
+                    className="mt-2 flex w-full items-center justify-center gap-1 rounded-lg border border-dashed border-slate-200 py-1.5 text-[11px] font-medium text-slate-400 hover:border-brand-300 hover:text-brand-600"
+                    title={t.calendar.addTask}
+                    aria-label={t.calendar.addTask}
+                  >
+                    <Plus size={12} strokeWidth={2.5} />
+                    {t.calendar.addTask}
+                  </button>
+                )}
               </div>
             );
           })}

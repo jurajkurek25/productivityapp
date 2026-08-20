@@ -133,6 +133,18 @@ export const t = {
     markDone: "Označiť ako hotové",
     skip: "Preskočiť",
     minutesTitle: "Minúty",
+    addTask: "Pridať úlohu",
+    quickAddPlaceholder: "Rýchla úloha…",
+    quickAddSave: "Pridať",
+  },
+  notifications: {
+    enable: "Zapnúť ranné pripomienky",
+    enabling: "Zapínam…",
+    enabled: "Ranné pripomienky sú zapnuté",
+    disable: "Vypnúť",
+    blocked: "Notifikácie sú v prehliadači zablokované. Povoľ ich v nastaveniach stránky.",
+    unsupported: "Tento prehliadač nepodporuje push notifikácie.",
+    error: "Zapnutie pripomienok sa nepodarilo.",
   },
   study: {
     title: "Študijný plán",

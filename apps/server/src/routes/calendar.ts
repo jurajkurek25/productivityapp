@@ -26,8 +26,31 @@ const updateInstanceSchema = z
   })
   .refine((data) => Object.keys(data).length > 0, { message: "At least one field is required" });
 
+const quickTaskSchema = z.object({
+  title: z.string().min(1).max(200),
+  domain: z.enum(LIFE_DOMAINS),
+  scheduledDate: z.string().optional(),
+  durationMinutes: z.number().min(1).max(24 * 60).default(30),
+});
+
+const INBOX_GOAL_TITLE = "Rýchle úlohy";
+
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+/**
+ * Quick-add tasks land under one auto-provisioned "inbox" goal so they reuse
+ * the existing Step/TaskInstance pipeline (energy history, balance report)
+ * without requiring the user to create a goal first. Step.domain is
+ * independent of the goal's own domain, so tasks of any domain can share it.
+ */
+async function getOrCreateInboxGoal(workspaceId: string) {
+  const existing = await prisma.goal.findFirst({ where: { workspaceId, title: INBOX_GOAL_TITLE } });
+  if (existing) return existing;
+  return prisma.goal.create({
+    data: { workspaceId, domain: "business", title: INBOX_GOAL_TITLE, status: "active" },
+  });
 }
 
 export async function calendarRoutes(app: FastifyInstance) {
@@ -97,6 +120,47 @@ export async function calendarRoutes(app: FastifyInstance) {
     }
 
     return reply.send({ energyState, placed: result.placed, unplaced: result.unplaced });
+  });
+
+  /**
+   * Creates a one-off task without requiring the user to first create a
+   * goal/step — an "inbox" goal absorbs it so it still participates in
+   * energy history and the domain-balance report like everything else.
+   */
+  app.post("/calendar/quick", async (request, reply) => {
+    const parsed = quickTaskSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+    const { workspaceId } = request.user;
+    const { title, domain, durationMinutes } = parsed.data;
+    const scheduledDate = parsed.data.scheduledDate ?? todayISO();
+
+    const goal = await getOrCreateInboxGoal(workspaceId);
+    const step = await prisma.step.create({
+      data: {
+        workspaceId,
+        goalId: goal.id,
+        domain,
+        title,
+        estimatedMinutes: durationMinutes,
+        priority: 3,
+        recurrenceFreq: "once",
+        status: "archived",
+        earliestDate: scheduledDate,
+      },
+    });
+    const instance = await prisma.taskInstance.create({
+      data: {
+        workspaceId,
+        stepId: step.id,
+        goalId: goal.id,
+        domain,
+        title,
+        scheduledDate,
+        durationMinutes,
+        status: "scheduled",
+      },
+    });
+    return reply.code(201).send(toDomainTaskInstance(instance));
   });
 
   app.patch("/calendar/instances/:id", async (request, reply) => {
