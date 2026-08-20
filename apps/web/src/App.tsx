@@ -18,9 +18,9 @@ function ProtectedShell({ children }: { children: React.ReactNode }) {
   if (loading) return <div className="p-8 text-center text-slate-400">Loading…</div>;
   if (!user) return <Navigate to="/login" replace />;
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50 md:flex-row">
+    <div className="flex min-h-screen flex-col bg-slate-50 md:h-screen md:flex-row">
       <Sidebar />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <MobileHeader />
         <main className="min-w-0 flex-1 overflow-y-auto px-4 py-6 pb-24 sm:px-8 sm:py-8 md:pb-8">
           <div className="mx-auto max-w-4xl">{children}</div>
