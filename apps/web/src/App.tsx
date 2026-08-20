@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import { Sidebar } from "./components/Sidebar";
 import { MobileHeader, MobileNav } from "./components/MobileNav";
+import { PomodoroWidget } from "./components/PomodoroWidget";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { DashboardPage } from "./pages/DashboardPage";
@@ -25,6 +26,7 @@ function ProtectedShell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
       <MobileNav />
+      <PomodoroWidget />
     </div>
   );
 }

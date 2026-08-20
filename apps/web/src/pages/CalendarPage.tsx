@@ -1,10 +1,11 @@
 import { FormEvent, useEffect, useState } from "react";
-import { CheckCircle2, ChevronLeft, ChevronRight, Circle, Pencil, Plus, Sparkles } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, Circle, Pencil, Play, Plus, Sparkles } from "lucide-react";
 import { LIFE_DOMAINS, type LifeDomain, type TaskInstance } from "@productivityapp/core";
 import { api } from "../lib/api";
 import { addDaysISO, formatShort, todayISO } from "../lib/date";
 import { DomainBadge, domainDotClass } from "../components/DomainBadge";
 import { Button } from "../components/Button";
+import { usePomodoro } from "../context/PomodoroContext";
 import { domainLabels, t } from "../lib/i18n";
 
 const fieldClass = "rounded border border-slate-300 px-1.5 py-1 text-xs focus:border-brand-500 focus:outline-none";
@@ -29,6 +30,7 @@ interface QuickAddFormState {
 const EMPTY_QUICK_ADD: QuickAddFormState = { title: "", domain: "business", durationMinutes: 30 };
 
 export function CalendarPage() {
+  const { start: startPomodoro } = usePomodoro();
   const [weekStart, setWeekStart] = useState(() => startOfWeek(todayISO()));
   const [instances, setInstances] = useState<TaskInstance[]>([]);
   const [loading, setLoading] = useState(true);
@@ -236,6 +238,14 @@ export function CalendarPage() {
                         <div className="ml-3 mt-1.5 flex flex-wrap items-center gap-1">
                           {inst.status !== "completed" && (
                             <>
+                              <button
+                                onClick={() => startPomodoro(inst.id, inst.title)}
+                                className="rounded p-1 text-brand-600 hover:bg-brand-50"
+                                title={t.pomodoro.start}
+                                aria-label={t.pomodoro.start}
+                              >
+                                <Play size={13} strokeWidth={2.5} />
+                              </button>
                               <button
                                 onClick={() => setStatus(inst.id, "completed")}
                                 className="rounded p-1 text-emerald-600 hover:bg-emerald-50"
