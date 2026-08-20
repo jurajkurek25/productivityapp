@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { AlertTriangle, ArrowRight, Minus, TrendingDown, TrendingUp } from "lucide-react";
 import type { EnergyState, PriorityReport } from "@productivityapp/core";
 import { api } from "../lib/api";
+import { BehindPaceBanner } from "../components/BehindPaceBanner";
 import { Card } from "../components/Card";
 import { DomainBadge, domainDotClass } from "../components/DomainBadge";
 import { LineChart } from "../components/LineChart";
@@ -160,6 +161,7 @@ export function DashboardPage() {
         </p>
       </div>
       <MissedTasksBanner onRescheduled={loadReports} />
+      <BehindPaceBanner />
       <NotificationToggle />
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {energy && <EnergyCard energy={energy} />}

@@ -2,11 +2,80 @@ import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import { LIFE_DOMAINS, type Goal, type GoalStatus, type LifeDomain, type RecurrenceFrequency, type Step, type SuggestedStep } from "@productivityapp/core";
-import { api } from "../lib/api";
+import { api, type GoalProgress } from "../lib/api";
 import { DomainBadge } from "../components/DomainBadge";
 import { Card } from "../components/Card";
 import { Button } from "../components/Button";
 import { domainLabels, frequencyLabels, statusLabels, t } from "../lib/i18n";
+
+function ProgressCard({ goalId }: { goalId: string }) {
+  const [progress, setProgress] = useState<GoalProgress | null>(null);
+
+  useEffect(() => {
+    setProgress(null);
+    api.getGoalProgress(goalId).then(setProgress);
+  }, [goalId]);
+
+  if (!progress) {
+    return <div className="h-24 animate-pulse rounded-xl border border-slate-200/80 bg-white" />;
+  }
+
+  if (progress.status === "no_deadline") {
+    return (
+      <Card>
+        <h2 className="mb-1 text-sm font-medium text-slate-500">{t.goalDetail.progressTitle}</h2>
+        <p className="text-sm text-slate-400">{t.goalDetail.noDeadline}</p>
+        {progress.totalCompletedMinutes > 0 && (
+          <p className="mt-2 text-sm text-slate-600">{t.goalDetail.totalInvested(progress.totalCompletedMinutes)}</p>
+        )}
+      </Card>
+    );
+  }
+
+  if (progress.status === "no_planned_work") {
+    return (
+      <Card>
+        <h2 className="mb-1 text-sm font-medium text-slate-500">{t.goalDetail.progressTitle}</h2>
+        <p className="text-sm text-slate-400">{t.goalDetail.noPlannedWork}</p>
+        {progress.totalCompletedMinutes > 0 && (
+          <p className="mt-2 text-sm text-slate-600">{t.goalDetail.totalInvested(progress.totalCompletedMinutes)}</p>
+        )}
+      </Card>
+    );
+  }
+
+  const onTrack = progress.status === "on_track";
+  const pct = progress.totalPlannedMinutes > 0 ? (progress.completedPlannedMinutes / progress.totalPlannedMinutes) * 100 : 100;
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-medium text-slate-500">{t.goalDetail.progressTitle}</h2>
+        <span
+          className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+            onTrack ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
+          }`}
+        >
+          {onTrack ? t.goalDetail.onTrack : t.goalDetail.behind}
+        </span>
+      </div>
+      <div className="mt-3 h-2 w-full rounded-full bg-slate-100">
+        <div
+          className={`h-2 rounded-full ${onTrack ? "bg-emerald-500" : "bg-amber-500"}`}
+          style={{ width: `${Math.min(100, pct)}%` }}
+        />
+      </div>
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-1 text-xs text-slate-500">
+        <span>{t.goalDetail.minutesDone(progress.completedPlannedMinutes, progress.totalPlannedMinutes)}</span>
+        {progress.remainingMinutes > 0 && <span>{t.goalDetail.minutesRemaining(progress.remainingMinutes)}</span>}
+      </div>
+      <div className="mt-3 space-y-1 border-t border-slate-100 pt-3 text-xs text-slate-400">
+        {progress.daysRemaining !== null && <p>{t.goalDetail.daysRemainingLabel(progress.daysRemaining)}</p>}
+        <p>{t.goalDetail.paceLabel(progress.recentPaceMinutesPerDay)}</p>
+      </div>
+    </Card>
+  );
+}
 
 const fieldClass =
   "rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500";
@@ -270,6 +339,8 @@ export function GoalDetailPage() {
           </div>
         </div>
       )}
+
+      <ProgressCard goalId={goal.id} />
 
       <Card>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">

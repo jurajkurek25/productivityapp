@@ -54,6 +54,28 @@ export interface AuthResponse {
   workspace: { id: string; name: string };
 }
 
+export type GoalProgressStatus = "on_track" | "behind" | "no_deadline" | "no_planned_work";
+
+export interface GoalProgress {
+  goalId: string;
+  targetDate: string | null;
+  daysRemaining: number | null;
+  totalPlannedMinutes: number;
+  completedPlannedMinutes: number;
+  remainingMinutes: number;
+  totalCompletedMinutes: number;
+  recentPaceMinutesPerDay: number;
+  status: GoalProgressStatus;
+}
+
+export interface BehindPaceGoal {
+  goalId: string;
+  title: string;
+  targetDate: string;
+  daysRemaining: number;
+  remainingMinutes: number;
+}
+
 export const api = {
   register: (email: string, password: string, name?: string) =>
     request<AuthResponse>("/auth/register", { method: "POST", body: JSON.stringify({ email, password, name }) }),
@@ -71,6 +93,8 @@ export const api = {
     request<Goal>(`/goals/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
   deleteGoal: (id: string) => request<void>(`/goals/${id}`, { method: "DELETE" }),
   suggestSteps: (goalId: string) => request<SuggestedStep[]>(`/goals/${goalId}/suggest-steps`),
+  getGoalProgress: (goalId: string) => request<GoalProgress>(`/goals/${goalId}/progress`),
+  getGoalsBehindPace: () => request<BehindPaceGoal[]>("/goals/progress-summary"),
 
   listSteps: (goalId?: string) => request<Step[]>(`/steps${goalId ? `?goalId=${goalId}` : ""}`),
   createStep: (data: {

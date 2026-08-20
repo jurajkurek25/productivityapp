@@ -3,6 +3,7 @@ import { z } from "zod";
 import { LIFE_DOMAINS, suggestStepsForGoal } from "@productivityapp/core";
 import { prisma } from "../lib/prisma.js";
 import { toDomainStep } from "../lib/mappers.js";
+import { computeGoalProgress, listGoalsBehindPace } from "../lib/goalProgress.js";
 
 const createGoalSchema = z.object({
   domain: z.enum(LIFE_DOMAINS),
@@ -29,6 +30,12 @@ export async function goalRoutes(app: FastifyInstance) {
     const { workspaceId } = request.user;
     const goal = await prisma.goal.create({ data: { ...parsed.data, workspaceId } });
     return reply.code(201).send(goal);
+  });
+
+  /** Active goals with a deadline that are currently behind pace — Dashboard summary banner. */
+  app.get("/goals/progress-summary", async (request) => {
+    const { workspaceId } = request.user;
+    return listGoalsBehindPace(workspaceId);
   });
 
   app.get("/goals/:id", async (request, reply) => {
@@ -66,5 +73,13 @@ export async function goalRoutes(app: FastifyInstance) {
     const goal = await prisma.goal.findFirst({ where: { id, workspaceId } });
     if (!goal) return reply.code(404).send({ error: "Not found" });
     return suggestStepsForGoal({ title: goal.title, domain: goal.domain as (typeof LIFE_DOMAINS)[number] });
+  });
+
+  app.get("/goals/:id/progress", async (request, reply) => {
+    const { workspaceId } = request.user;
+    const { id } = request.params as { id: string };
+    const goal = await prisma.goal.findFirst({ where: { id, workspaceId } });
+    if (!goal) return reply.code(404).send({ error: "Not found" });
+    return computeGoalProgress(workspaceId, id);
   });
 }

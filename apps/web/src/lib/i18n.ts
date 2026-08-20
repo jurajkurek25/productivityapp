@@ -88,6 +88,9 @@ export const t = {
     missedBanner: (count: number) => `Máš ${count} zmeškaných úloh.`,
     rescheduleMissed: "Presunúť na dnes",
     rescheduling: "Presúvam…",
+    behindPaceBanner: (count: number) => `${count} cieľov mešká za tempom.`,
+    behindPaceGoal: (title: string, days: number) =>
+      days < 0 ? `${title} — termín uplynul pred ${Math.abs(days)} dňami` : `${title} — termín o ${days} dní`,
     trendTitle: "Trend energie (30 dní)",
     trendEmpty: "Zatiaľ nemáš dosť histórie na graf trendu.",
   },
@@ -120,6 +123,17 @@ export const t = {
     aiSuggested: "navrhnuté AI",
     editStep: "Upraviť krok",
     removeStep: "Odstrániť krok",
+    progressTitle: "Postup",
+    noDeadline: "Cieľ nemá termín — postup voči termínu sa nedá sledovať.",
+    noPlannedWork: "Cieľ obsahuje len opakujúce sa kroky (návyky), takže nemá pevný rozsah práce na sledovanie.",
+    onTrack: "Na dobrej ceste",
+    behind: "Meškáš za tempom",
+    minutesDone: (done: number, total: number) => `${done} / ${total} min hotovo`,
+    minutesRemaining: (n: number) => `${n} min zostáva`,
+    paceLabel: (n: number) => `Tempo: ${n} min/deň (posledných 14 dní)`,
+    totalInvested: (n: number) => `Celkovo odpracované: ${n} min`,
+    daysRemainingLabel: (n: number) =>
+      n < 0 ? `Termín uplynul pred ${Math.abs(n)} dňami` : n === 0 ? "Termín je dnes" : `${n} dní do termínu`,
   },
   recurrenceLabel: {
     once: "Jednorazovo",
