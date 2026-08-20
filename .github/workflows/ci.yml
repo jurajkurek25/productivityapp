@@ -23,6 +23,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # pnpm blocks Prisma's postinstall script by default (the "Ignored
+      # build scripts" warning above), so @prisma/client has no generated
+      # types (PrismaClient, Step, TaskInstance, ...) until this runs
+      # explicitly — every server typecheck/build/test step below needs it.
+      - name: Generate Prisma client
+        run: pnpm --filter server exec prisma generate
+
       # apps/server and apps/web resolve @productivityapp/core's types from
       # its built dist/ output, so core has to be compiled before anything
       # that imports it can typecheck or build.
