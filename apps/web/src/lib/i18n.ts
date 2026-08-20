@@ -95,6 +95,9 @@ export const t = {
     trendEmpty: "Zatiaľ nemáš dosť histórie na graf trendu.",
     goalInvestmentTitle: "Časová investícia podľa cieľov (posledných 7 dní)",
     goalInvestmentEmpty: "Zatiaľ žiadna aktivita na cieľoch za posledných 7 dní.",
+    neglectedGoalsBanner: (count: number) => `${count} cieľov je zanedbaných.`,
+    neglectedGoalNoActivity: (title: string) => `${title} — žiadna zaznamenaná aktivita`,
+    neglectedGoalDaysAgo: (title: string, days: number) => `${title} — naposledy pred ${days} dňami`,
   },
   goals: {
     title: "Ciele",
@@ -136,6 +139,8 @@ export const t = {
     totalInvested: (n: number) => `Celkovo odpracované: ${n} min`,
     daysRemainingLabel: (n: number) =>
       n < 0 ? `Termín uplynul pred ${Math.abs(n)} dňami` : n === 0 ? "Termín je dnes" : `${n} dní do termínu`,
+    investmentTrendTitle: "Investícia v čase (8 týždňov)",
+    investmentTrendEmpty: "Zatiaľ žiadna investícia času za posledných 8 týždňov.",
   },
   recurrenceLabel: {
     once: "Jednorazovo",

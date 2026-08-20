@@ -8,6 +8,7 @@ import { Card } from "../components/Card";
 import { DomainBadge, domainDotClass } from "../components/DomainBadge";
 import { LineChart } from "../components/LineChart";
 import { MissedTasksBanner } from "../components/MissedTasksBanner";
+import { NeglectedGoalsBanner } from "../components/NeglectedGoalsBanner";
 import { NotificationToggle } from "../components/NotificationToggle";
 import { formatShort } from "../lib/date";
 import { domainLabels, t } from "../lib/i18n";
@@ -211,6 +212,7 @@ export function DashboardPage() {
       </div>
       <MissedTasksBanner onRescheduled={loadReports} />
       <BehindPaceBanner />
+      <NeglectedGoalsBanner />
       <NotificationToggle />
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {energy && <EnergyCard energy={energy} />}

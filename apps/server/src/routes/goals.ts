@@ -5,8 +5,12 @@ import { prisma } from "../lib/prisma.js";
 import { toDomainStep } from "../lib/mappers.js";
 import { computeGoalProgress, listGoalsBehindPace } from "../lib/goalProgress.js";
 import { computeGoalTimeInvestment } from "../lib/goalTimeInvestment.js";
+import { listNeglectedGoals } from "../lib/neglectedGoals.js";
+import { computeGoalInvestmentTrend } from "../lib/goalInvestmentTrend.js";
 
 const timeInvestmentQuerySchema = z.object({ windowDays: z.coerce.number().min(1).max(90).optional() });
+const neglectedQuerySchema = z.object({ windowDays: z.coerce.number().min(1).max(90).optional() });
+const investmentTrendQuerySchema = z.object({ weeks: z.coerce.number().min(1).max(52).optional() });
 
 const createGoalSchema = z.object({
   domain: z.enum(LIFE_DOMAINS),
@@ -47,6 +51,14 @@ export async function goalRoutes(app: FastifyInstance) {
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
     const { workspaceId } = request.user;
     return computeGoalTimeInvestment(workspaceId, parsed.data.windowDays ?? 7);
+  });
+
+  /** Active goals with no completed activity in the window — catches goals with no targetDate that just stall. */
+  app.get("/goals/neglected", async (request, reply) => {
+    const parsed = neglectedQuerySchema.safeParse(request.query);
+    if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+    const { workspaceId } = request.user;
+    return listNeglectedGoals(workspaceId, parsed.data.windowDays ?? 14);
   });
 
   app.get("/goals/:id", async (request, reply) => {
@@ -92,5 +104,15 @@ export async function goalRoutes(app: FastifyInstance) {
     const goal = await prisma.goal.findFirst({ where: { id, workspaceId } });
     if (!goal) return reply.code(404).send({ error: "Not found" });
     return computeGoalProgress(workspaceId, id);
+  });
+
+  app.get("/goals/:id/investment-trend", async (request, reply) => {
+    const parsed = investmentTrendQuerySchema.safeParse(request.query);
+    if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+    const { workspaceId } = request.user;
+    const { id } = request.params as { id: string };
+    const goal = await prisma.goal.findFirst({ where: { id, workspaceId } });
+    if (!goal) return reply.code(404).send({ error: "Not found" });
+    return computeGoalInvestmentTrend(workspaceId, id, parsed.data.weeks ?? 8);
   });
 }

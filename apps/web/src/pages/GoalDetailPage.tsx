@@ -6,6 +6,8 @@ import { api, type GoalProgress } from "../lib/api";
 import { DomainBadge } from "../components/DomainBadge";
 import { Card } from "../components/Card";
 import { Button } from "../components/Button";
+import { LineChart } from "../components/LineChart";
+import { formatShort } from "../lib/date";
 import { domainLabels, frequencyLabels, statusLabels, t } from "../lib/i18n";
 
 function ProgressCard({ goalId }: { goalId: string }) {
@@ -73,6 +75,35 @@ function ProgressCard({ goalId }: { goalId: string }) {
         {progress.daysRemaining !== null && <p>{t.goalDetail.daysRemainingLabel(progress.daysRemaining)}</p>}
         <p>{t.goalDetail.paceLabel(progress.recentPaceMinutesPerDay)}</p>
       </div>
+    </Card>
+  );
+}
+
+function InvestmentTrendCard({ goalId }: { goalId: string }) {
+  const [points, setPoints] = useState<{ weekStart: string; completedMinutes: number }[] | null>(null);
+
+  useEffect(() => {
+    setPoints(null);
+    api.getGoalInvestmentTrend(goalId, 8).then(setPoints);
+  }, [goalId]);
+
+  const hasActivity = points?.some((p) => p.completedMinutes > 0) ?? false;
+
+  return (
+    <Card>
+      <h2 className="mb-4 text-sm font-medium text-slate-500">{t.goalDetail.investmentTrendTitle}</h2>
+      {points === null ? (
+        <div className="h-[140px] animate-pulse rounded-lg bg-slate-100" />
+      ) : !hasActivity ? (
+        <p className="text-sm text-slate-400">{t.goalDetail.investmentTrendEmpty}</p>
+      ) : (
+        <LineChart
+          points={points.map((p) => ({ label: formatShort(p.weekStart), value: p.completedMinutes }))}
+          min={0}
+          max={Math.max(30, ...points.map((p) => p.completedMinutes))}
+          color="#f59e0b"
+        />
+      )}
     </Card>
   );
 }
@@ -341,6 +372,7 @@ export function GoalDetailPage() {
       )}
 
       <ProgressCard goalId={goal.id} />
+      <InvestmentTrendCard goalId={goal.id} />
 
       <Card>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">

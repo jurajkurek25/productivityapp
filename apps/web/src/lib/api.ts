@@ -87,6 +87,18 @@ export interface GoalTimeInvestment {
   completionRate: number;
 }
 
+export interface NeglectedGoal {
+  goalId: string;
+  title: string;
+  domain: LifeDomain;
+  daysSinceLastActivity: number | null;
+}
+
+export interface GoalInvestmentTrendPoint {
+  weekStart: string;
+  completedMinutes: number;
+}
+
 export const api = {
   register: (email: string, password: string, name?: string) =>
     request<AuthResponse>("/auth/register", { method: "POST", body: JSON.stringify({ email, password, name }) }),
@@ -108,6 +120,9 @@ export const api = {
   getGoalsBehindPace: () => request<BehindPaceGoal[]>("/goals/progress-summary"),
   getGoalTimeInvestment: (windowDays = 7) =>
     request<GoalTimeInvestment[]>(`/goals/time-investment?windowDays=${windowDays}`),
+  getNeglectedGoals: (windowDays = 14) => request<NeglectedGoal[]>(`/goals/neglected?windowDays=${windowDays}`),
+  getGoalInvestmentTrend: (goalId: string, weeks = 8) =>
+    request<GoalInvestmentTrendPoint[]>(`/goals/${goalId}/investment-trend?weeks=${weeks}`),
 
   listSteps: (goalId?: string) => request<Step[]>(`/steps${goalId ? `?goalId=${goalId}` : ""}`),
   createStep: (data: {
