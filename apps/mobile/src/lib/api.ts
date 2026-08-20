@@ -12,7 +12,7 @@ import type {
   TaskInstance,
 } from "@productivityapp/core";
 
-const API_BASE: string = (Constants.expoConfig?.extra as { apiUrl?: string } | undefined)?.apiUrl ?? "http://localhost:4000";
+const API_BASE: string = (Constants.expoConfig?.extra as { apiUrl?: string } | undefined)?.apiUrl ?? "http://localhost:4000/api";
 const TOKEN_KEY = "balance.token";
 
 // Cached in memory after the initial AsyncStorage read so `request()` can

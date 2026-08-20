@@ -137,6 +137,8 @@ your machine before shipping, especially for in-app navigation.
 
 ## Notable API endpoints
 
+All routes below live under an `/api` prefix (e.g. `POST /api/auth/login`).
+
 | Method | Path | Purpose |
 |---|---|---|
 | POST | `/auth/register`, `/auth/login` | Auth, returns a JWT |
@@ -149,3 +151,30 @@ your machine before shipping, especially for in-app navigation.
 | GET | `/energy?date=` | Inferred energy state for a date |
 | GET | `/priority?windowDays=` | Cross-domain balance report |
 | POST | `/study/plans` | Build + schedule a study plan from materials + exam date |
+
+## Deploying as a single process
+
+`apps/server` can also serve the built web app directly: everything under
+`/api/*` is the REST API, and every other path falls back to `apps/web`'s
+built `index.html` (a standard SPA fallback), so React Router handles
+client-side routes like `/goals` or `/calendar`. This is meant for hosting
+setups that proxy an entire domain to one Node process rather than splitting
+static files and an API across separate config.
+
+```bash
+pnpm --filter @productivityapp/core build
+pnpm --filter web build             # produces apps/web/dist
+cd apps/server
+cp .env.example .env                # set JWT_SECRET, CORS_ORIGIN, PORT for real
+pnpm exec prisma generate
+pnpm exec prisma db push            # must happen before the build below —
+                                     # tsc needs Prisma's generated client types
+cd ..
+pnpm --filter server build
+cd apps/server
+node dist/index.js                  # or run under pm2/systemd
+```
+
+By default it looks for the web build at the sibling `apps/web/dist`; set
+`WEB_DIST_PATH` in `.env` to point elsewhere if you publish the built site
+separately.
