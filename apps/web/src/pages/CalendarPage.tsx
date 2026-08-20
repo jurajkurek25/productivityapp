@@ -5,6 +5,7 @@ import { api } from "../lib/api";
 import { addDaysISO, formatShort, todayISO } from "../lib/date";
 import { DomainBadge, domainDotClass } from "../components/DomainBadge";
 import { Button } from "../components/Button";
+import { t } from "../lib/i18n";
 
 const fieldClass = "rounded border border-slate-300 px-1.5 py-1 text-xs focus:border-brand-500 focus:outline-none";
 
@@ -47,9 +48,12 @@ export function CalendarPage() {
     try {
       const res = await api.generateCalendar(weekStart, weekEnd);
       setMessage(
-        `Placed ${res.placed.length} task(s). Today's energy score: ${res.energyState.score}/100 (capacity at ${Math.round(
-          res.energyState.loadMultiplier * 100
-        )}%).${res.unplaced.length ? ` ${res.unplaced.length} could not fit — consider lowering scope.` : ""}`
+        t.calendar.placedMessage(
+          res.placed.length,
+          res.energyState.score,
+          Math.round(res.energyState.loadMultiplier * 100),
+          res.unplaced.length
+        )
       );
       load();
     } finally {
@@ -83,7 +87,7 @@ export function CalendarPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-bold text-slate-900">Calendar</h1>
+          <h1 className="font-display text-2xl font-bold text-slate-900">{t.calendar.title}</h1>
           <p className="mt-1 text-sm text-slate-500">
             {formatShort(weekStart)} – {formatShort(weekEnd)}
           </p>
@@ -93,7 +97,7 @@ export function CalendarPage() {
             <button
               onClick={() => setWeekStart(addDaysISO(weekStart, -7))}
               className="p-2 text-slate-500 hover:bg-slate-50"
-              title="Previous week"
+              title="Predchádzajúci týždeň"
             >
               <ChevronLeft size={16} strokeWidth={2.25} />
             </button>
@@ -101,18 +105,18 @@ export function CalendarPage() {
               onClick={() => setWeekStart(startOfWeek(todayISO()))}
               className="border-x border-slate-300 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
             >
-              Today
+              {t.calendar.today}
             </button>
             <button
               onClick={() => setWeekStart(addDaysISO(weekStart, 7))}
               className="p-2 text-slate-500 hover:bg-slate-50"
-              title="Next week"
+              title="Nasledujúci týždeň"
             >
               <ChevronRight size={16} strokeWidth={2.25} />
             </button>
           </div>
           <Button variant="primary" icon={Sparkles} onClick={handleGenerate} disabled={generating}>
-            {generating ? "Generating…" : "Generate schedule"}
+            {generating ? t.calendar.generating : t.calendar.generateSchedule}
           </Button>
         </div>
       </div>
@@ -170,19 +174,19 @@ export function CalendarPage() {
                             value={editForm.durationMinutes}
                             onChange={(e) => setEditForm({ ...editForm, durationMinutes: Number(e.target.value) })}
                             className={`${fieldClass} w-14 text-[10px]`}
-                            title="Minutes"
+                            title={t.calendar.minutesTitle}
                           />
                         </div>
                         <div className="flex gap-2 pt-0.5">
                           <button type="submit" className="text-[11px] font-semibold text-brand-600 hover:text-brand-700">
-                            Save
+                            {t.common.save}
                           </button>
                           <button
                             type="button"
                             onClick={() => setEditingId(null)}
                             className="text-[11px] font-medium text-slate-400 hover:text-slate-600"
                           >
-                            Cancel
+                            {t.common.cancel}
                           </button>
                         </div>
                       </form>
@@ -198,35 +202,37 @@ export function CalendarPage() {
                             {inst.title}
                           </p>
                         </div>
-                        <p className="ml-3 mt-0.5 text-[10px] text-slate-400">{inst.durationMinutes}m</p>
-                        <div className="ml-3 mt-1.5 flex items-center gap-2.5">
+                        <p className="ml-3 mt-0.5 text-[10px] text-slate-400">
+                          {inst.durationMinutes} {t.common.minutesShort}
+                        </p>
+                        <div className="ml-3 mt-1.5 flex flex-wrap items-center gap-1">
                           {inst.status !== "completed" && (
                             <>
                               <button
                                 onClick={() => setStatus(inst.id, "completed")}
-                                className="flex items-center gap-1 text-[11px] font-medium text-emerald-600 hover:text-emerald-700"
-                                title="Mark done"
+                                className="rounded p-1 text-emerald-600 hover:bg-emerald-50"
+                                title={t.calendar.markDone}
+                                aria-label={t.calendar.markDone}
                               >
-                                <CheckCircle2 size={12} strokeWidth={2.5} />
-                                Done
+                                <CheckCircle2 size={13} strokeWidth={2.5} />
                               </button>
                               <button
                                 onClick={() => setStatus(inst.id, "skipped")}
-                                className="flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-slate-600"
-                                title="Skip"
+                                className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                                title={t.calendar.skip}
+                                aria-label={t.calendar.skip}
                               >
-                                <Circle size={12} strokeWidth={2.5} />
-                                Skip
+                                <Circle size={13} strokeWidth={2.5} />
                               </button>
                             </>
                           )}
                           <button
                             onClick={() => startEdit(inst)}
-                            className="flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-slate-600"
-                            title="Edit"
+                            className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                            title={t.common.edit}
+                            aria-label={t.common.edit}
                           >
-                            <Pencil size={11} strokeWidth={2.5} />
-                            Edit
+                            <Pencil size={13} strokeWidth={2.5} />
                           </button>
                         </div>
                       </div>

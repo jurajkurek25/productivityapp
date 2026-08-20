@@ -1,19 +1,20 @@
 import { NavLink } from "react-router-dom";
 import { CalendarDays, LayoutDashboard, LogOut, Sparkles, Target } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { t } from "../lib/i18n";
 
 const LINKS = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/goals", label: "Goals", icon: Target },
-  { to: "/calendar", label: "Calendar", icon: CalendarDays },
-  { to: "/study", label: "Study", icon: Sparkles },
+  { to: "/", label: t.nav.dashboard, icon: LayoutDashboard },
+  { to: "/goals", label: t.nav.goals, icon: Target },
+  { to: "/calendar", label: t.nav.calendar, icon: CalendarDays },
+  { to: "/study", label: t.nav.study, icon: Sparkles },
 ];
 
 export function Sidebar() {
   const { user, workspace, logout } = useAuth();
 
   return (
-    <aside className="flex h-screen w-60 shrink-0 flex-col border-r border-slate-200 bg-white">
+    <aside className="hidden h-screen w-60 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
       <div className="flex items-center gap-2 px-5 py-5">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-sm font-bold text-white">
           B
@@ -42,12 +43,13 @@ export function Sidebar() {
       <div className="border-t border-slate-100 p-3">
         <div className="flex items-center justify-between rounded-lg px-2 py-2">
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-slate-800">{workspace?.name ?? "Workspace"}</p>
+            <p className="truncate text-sm font-medium text-slate-800">{workspace?.name ?? "Pracovný priestor"}</p>
             <p className="truncate text-xs text-slate-400">{user?.email}</p>
           </div>
           <button
             onClick={logout}
-            title="Log out"
+            title={t.nav.logout}
+            aria-label={t.nav.logout}
             className="shrink-0 rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
           >
             <LogOut size={16} strokeWidth={2.25} />

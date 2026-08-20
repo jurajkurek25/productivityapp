@@ -25,7 +25,7 @@ export async function authRoutes(app: FastifyInstance) {
 
     const passwordHash = await bcrypt.hash(password, 10);
     const workspace = await prisma.workspace.create({
-      data: { name: name ? `${name}'s workspace` : "My workspace" },
+      data: { name: name ? `Priestor používateľa ${name}` : "Môj priestor" },
     });
     const user = await prisma.user.create({
       data: {

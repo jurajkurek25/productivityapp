@@ -6,16 +6,17 @@ import { api } from "../lib/api";
 import { DomainBadge } from "../components/DomainBadge";
 import { Card } from "../components/Card";
 import { Button } from "../components/Button";
+import { domainLabels, frequencyLabels, statusLabels, t } from "../lib/i18n";
 
 const fieldClass =
   "rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500";
 
 function recurrenceLabel(step: Pick<Step, "recurrence">): string {
   const { freq, daysOfWeek } = step.recurrence;
-  if (freq === "once") return "One-off";
-  if (freq === "daily") return daysOfWeek?.length ? `Daily (${daysOfWeek.length} days/week)` : "Daily";
-  if (freq === "weekly") return "Weekly";
-  return "Monthly";
+  if (freq === "once") return t.recurrenceLabel.once;
+  if (freq === "daily") return daysOfWeek?.length ? t.recurrenceLabel.dailyDaysPerWeek(daysOfWeek.length) : t.recurrenceLabel.daily;
+  if (freq === "weekly") return t.recurrenceLabel.weekly;
+  return t.recurrenceLabel.monthly;
 }
 
 interface GoalFormState {
@@ -115,7 +116,7 @@ export function GoalDetailPage() {
 
   async function removeGoal() {
     if (!goal) return;
-    if (!confirm(`Delete goal "${goal.title}" and all its steps?`)) return;
+    if (!confirm(t.goalDetail.confirmDelete(goal.title))) return;
     await api.deleteGoal(goal.id);
     navigate("/goals");
   }
@@ -171,15 +172,15 @@ export function GoalDetailPage() {
     <div className="space-y-6">
       <Link to="/goals" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700">
         <ArrowLeft size={14} strokeWidth={2.25} />
-        Back to Goals
+        {t.goalDetail.backToGoals}
       </Link>
 
       {editingGoal && goalForm ? (
         <Card>
           <form onSubmit={handleGoalEditSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">Domain</label>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">{t.goals.domain}</label>
                 <select
                   value={goalForm.domain}
                   onChange={(e) => setGoalForm({ ...goalForm, domain: e.target.value as LifeDomain })}
@@ -187,13 +188,13 @@ export function GoalDetailPage() {
                 >
                   {LIFE_DOMAINS.map((d) => (
                     <option key={d} value={d}>
-                      {d}
+                      {domainLabels[d]}
                     </option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">Target date</label>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">{t.goals.targetDateOptional}</label>
                 <input
                   type="date"
                   value={goalForm.targetDate}
@@ -203,7 +204,7 @@ export function GoalDetailPage() {
               </div>
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Title</label>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">{t.goals.goalTitle}</label>
               <input
                 value={goalForm.title}
                 onChange={(e) => setGoalForm({ ...goalForm, title: e.target.value })}
@@ -212,7 +213,7 @@ export function GoalDetailPage() {
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Status</label>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">{t.goals.status}</label>
               <select
                 value={goalForm.status}
                 onChange={(e) => setGoalForm({ ...goalForm, status: e.target.value as GoalStatus })}
@@ -220,43 +221,49 @@ export function GoalDetailPage() {
               >
                 {(["active", "paused", "completed", "abandoned"] satisfies GoalStatus[]).map((s) => (
                   <option key={s} value={s}>
-                    {s}
+                    {statusLabels[s]}
                   </option>
                 ))}
               </select>
             </div>
             <div className="flex gap-2">
               <Button type="submit" variant="primary">
-                Save
+                {t.common.save}
               </Button>
               <Button type="button" variant="secondary" onClick={() => setEditingGoal(false)}>
-                Cancel
+                {t.common.cancel}
               </Button>
             </div>
           </form>
         </Card>
       ) : (
-        <div className="flex items-start justify-between">
-          <div>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
             <h1 className="font-display text-2xl font-bold text-slate-900">{goal.title}</h1>
-            <div className="mt-2 flex items-center gap-3">
+            <div className="mt-2 flex flex-wrap items-center gap-3">
               <DomainBadge domain={goal.domain} />
-              {goal.targetDate && <span className="text-xs text-slate-400">Target: {goal.targetDate}</span>}
-              <span className="text-xs font-medium uppercase tracking-wide text-slate-400">{goal.status}</span>
+              {goal.targetDate && (
+                <span className="text-xs text-slate-400">
+                  {t.goals.targetPrefix} {goal.targetDate}
+                </span>
+              )}
+              <span className="text-xs font-medium uppercase tracking-wide text-slate-400">{statusLabels[goal.status]}</span>
             </div>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex shrink-0 items-center gap-1.5">
             <button
               onClick={startEditGoal}
               className="rounded-md p-2.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-              title="Edit goal"
+              title={t.goalDetail.editGoal}
+              aria-label={t.goalDetail.editGoal}
             >
               <Pencil size={16} strokeWidth={2.25} />
             </button>
             <button
               onClick={removeGoal}
               className="rounded-md p-2.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
-              title="Delete goal"
+              title={t.goalDetail.deleteGoal}
+              aria-label={t.goalDetail.deleteGoal}
             >
               <Trash2 size={16} strokeWidth={2.25} />
             </button>
@@ -265,28 +272,31 @@ export function GoalDetailPage() {
       )}
 
       <Card>
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-sm font-medium text-slate-500">Steps</h2>
-          <div className="flex gap-2">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-sm font-medium text-slate-500">{t.goalDetail.steps}</h2>
+          <div className="flex flex-wrap gap-2">
             <Button variant="secondary" size="sm" icon={Sparkles} onClick={loadSuggestions}>
-              Suggest steps
+              {t.goalDetail.suggestSteps}
             </Button>
             <Button variant="primary" size="sm" icon={Plus} onClick={() => setShowManualForm((v) => !v)}>
-              Add step
+              {t.goalDetail.addStep}
             </Button>
           </div>
         </div>
 
         {suggestions && suggestions.length > 0 && (
           <div className="mb-4 space-y-2 rounded-lg bg-brand-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-brand-700">Suggested breakdown</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-brand-700">{t.goalDetail.suggestedBreakdown}</p>
             {suggestions.map((s) => (
               <div key={s.title} className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-sm shadow-sm">
                 <span>
-                  {s.title} <span className="text-slate-400">· {s.estimatedMinutes}m · {s.recurrence.freq}</span>
+                  {s.title}{" "}
+                  <span className="text-slate-400">
+                    · {s.estimatedMinutes} {t.common.minutesShort} · {frequencyLabels[s.recurrence.freq]}
+                  </span>
                 </span>
                 <button onClick={() => acceptSuggestion(s)} className="font-medium text-brand-600 hover:text-brand-700">
-                  Add
+                  {t.common.add}
                 </button>
               </div>
             ))}
@@ -298,7 +308,7 @@ export function GoalDetailPage() {
             <input
               value={manualTitle}
               onChange={(e) => setManualTitle(e.target.value)}
-              placeholder="Step title"
+              placeholder={t.goalDetail.stepTitlePlaceholder}
               className={`${fieldClass} w-full`}
               required
             />
@@ -315,20 +325,20 @@ export function GoalDetailPage() {
                 onChange={(e) => setManualFreq(e.target.value as RecurrenceFrequency)}
                 className={`${fieldClass} w-auto`}
               >
-                <option value="once">Once</option>
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
+                <option value="once">{frequencyLabels.once}</option>
+                <option value="daily">{frequencyLabels.daily}</option>
+                <option value="weekly">{frequencyLabels.weekly}</option>
+                <option value="monthly">{frequencyLabels.monthly}</option>
               </select>
               <Button type="submit" variant="primary">
-                Save
+                {t.common.save}
               </Button>
             </div>
           </form>
         )}
 
         {goal.steps.length === 0 ? (
-          <p className="text-sm text-slate-400">No steps yet.</p>
+          <p className="text-sm text-slate-400">{t.goalDetail.noStepsYet}</p>
         ) : (
           <ul className="divide-y divide-slate-100">
             {goal.steps.map((step) =>
@@ -349,7 +359,7 @@ export function GoalDetailPage() {
                       >
                         {LIFE_DOMAINS.map((d) => (
                           <option key={d} value={d}>
-                            {d}
+                            {domainLabels[d]}
                           </option>
                         ))}
                       </select>
@@ -359,17 +369,17 @@ export function GoalDetailPage() {
                         value={stepForm.estimatedMinutes}
                         onChange={(e) => setStepForm({ ...stepForm, estimatedMinutes: Number(e.target.value) })}
                         className={`${fieldClass} w-24`}
-                        title="Minutes"
+                        title={t.calendar.minutesTitle}
                       />
                       <select
                         value={stepForm.priority}
                         onChange={(e) => setStepForm({ ...stepForm, priority: Number(e.target.value) })}
                         className={`${fieldClass} w-auto`}
-                        title="Priority"
+                        title={t.goals.status}
                       >
                         {[1, 2, 3, 4, 5].map((p) => (
                           <option key={p} value={p}>
-                            Priority {p}
+                            {t.goalDetail.priority(p)}
                           </option>
                         ))}
                       </select>
@@ -378,43 +388,45 @@ export function GoalDetailPage() {
                         onChange={(e) => setStepForm({ ...stepForm, freq: e.target.value as RecurrenceFrequency })}
                         className={`${fieldClass} w-auto`}
                       >
-                        <option value="once">Once</option>
-                        <option value="daily">Daily</option>
-                        <option value="weekly">Weekly</option>
-                        <option value="monthly">Monthly</option>
+                        <option value="once">{frequencyLabels.once}</option>
+                        <option value="daily">{frequencyLabels.daily}</option>
+                        <option value="weekly">{frequencyLabels.weekly}</option>
+                        <option value="monthly">{frequencyLabels.monthly}</option>
                       </select>
                     </div>
                     <div className="flex gap-2">
                       <Button type="submit" variant="primary">
-                        Save
+                        {t.common.save}
                       </Button>
                       <Button type="button" variant="secondary" onClick={() => setEditingStepId(null)}>
-                        Cancel
+                        {t.common.cancel}
                       </Button>
                     </div>
                   </form>
                 </li>
               ) : (
-                <li key={step.id} className="flex items-center justify-between py-3">
-                  <div>
-                    <p className="text-sm font-medium text-slate-800">{step.title}</p>
+                <li key={step.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-slate-800">{step.title}</p>
                     <p className="text-xs text-slate-400">
-                      {step.estimatedMinutes}m · {recurrenceLabel(step)}
-                      {step.aiSuggested && " · AI-suggested"}
+                      {step.estimatedMinutes} {t.common.minutesShort} · {recurrenceLabel(step)}
+                      {step.aiSuggested && ` · ${t.goalDetail.aiSuggested}`}
                     </p>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex shrink-0 items-center gap-1">
                     <button
                       onClick={() => startEditStep(step)}
                       className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-                      title="Edit step"
+                      title={t.goalDetail.editStep}
+                      aria-label={t.goalDetail.editStep}
                     >
                       <Pencil size={14} strokeWidth={2.25} />
                     </button>
                     <button
                       onClick={() => removeStep(step.id)}
                       className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
-                      title="Remove step"
+                      title={t.goalDetail.removeStep}
+                      aria-label={t.goalDetail.removeStep}
                     >
                       <Trash2 size={14} strokeWidth={2.25} />
                     </button>

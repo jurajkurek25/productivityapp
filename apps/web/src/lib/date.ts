@@ -8,7 +8,7 @@ export function addDaysISO(date: string, n: number): string {
 }
 
 export function formatShort(date: string): string {
-  return new Date(date + "T00:00:00Z").toLocaleDateString(undefined, {
+  return new Date(date + "T00:00:00Z").toLocaleDateString("sk-SK", {
     weekday: "short",
     month: "short",
     day: "numeric",

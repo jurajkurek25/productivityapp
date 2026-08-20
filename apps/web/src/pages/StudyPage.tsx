@@ -6,6 +6,7 @@ import { api } from "../lib/api";
 import { addDaysISO, todayISO } from "../lib/date";
 import { Card } from "../components/Card";
 import { Button } from "../components/Button";
+import { t } from "../lib/i18n";
 
 const fieldClass =
   "rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500";
@@ -35,7 +36,7 @@ export function StudyPage() {
     setError(null);
     const cleanMaterials = materials.filter((m) => m.title.trim());
     if (!goalTitle.trim() || cleanMaterials.length === 0) {
-      setError("Add a title and at least one study material.");
+      setError(t.study.errorMissingFields);
       return;
     }
     setSubmitting(true);
@@ -49,7 +50,7 @@ export function StudyPage() {
       });
       setResult({ plan: res.plan, scheduledCount: res.scheduled.length });
     } catch {
-      setError("Could not build the study plan. Check your dates.");
+      setError(t.study.errorBuildFailed);
     } finally {
       setSubmitting(false);
     }
@@ -58,37 +59,34 @@ export function StudyPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-bold text-slate-900">Study plan</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Split your material into a day-by-day plan up to the exam. It's scheduled through the same calendar and
-          energy system as everything else.
-        </p>
+        <h1 className="font-display text-2xl font-bold text-slate-900">{t.study.title}</h1>
+        <p className="mt-1 text-sm text-slate-500">{t.study.subtitle}</p>
       </div>
 
       <Card>
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">Exam / goal title</label>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">{t.study.examTitle}</label>
             <input
               value={goalTitle}
               onChange={(e) => setGoalTitle(e.target.value)}
-              placeholder="e.g. Pass Algorithms Exam"
+              placeholder={t.study.examTitlePlaceholder}
               className={`${fieldClass} w-full`}
               required
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Start date</label>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">{t.study.startDate}</label>
               <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={`${fieldClass} w-full`} />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Exam date</label>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">{t.study.examDate}</label>
               <input type="date" value={examDate} onChange={(e) => setExamDate(e.target.value)} className={`${fieldClass} w-full`} />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Daily study minutes</label>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">{t.study.dailyMinutes}</label>
               <input
                 type="number"
                 min={15}
@@ -100,33 +98,33 @@ export function StudyPage() {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Study materials / topics</label>
+            <label className="mb-2 block text-sm font-medium text-slate-700">{t.study.materialsTitle}</label>
             <div className="space-y-2">
               {materials.map((m, i) => (
-                <div key={i} className="flex gap-2">
+                <div key={i} className="flex flex-wrap gap-2">
                   <input
                     value={m.title}
                     onChange={(e) => updateMaterial(i, { title: e.target.value })}
-                    placeholder="Topic name"
-                    className={`${fieldClass} flex-1`}
+                    placeholder={t.study.topicPlaceholder}
+                    className={`${fieldClass} w-full min-w-[10rem] flex-1 sm:w-auto`}
                   />
                   <input
                     type="number"
                     min={5}
                     value={m.estimatedMinutes}
                     onChange={(e) => updateMaterial(i, { estimatedMinutes: Number(e.target.value) })}
-                    title="Estimated minutes"
-                    className={`${fieldClass} w-24`}
+                    title={t.study.dailyMinutes}
+                    className={`${fieldClass} w-20`}
                   />
                   <select
                     value={m.difficulty}
                     onChange={(e) => updateMaterial(i, { difficulty: Number(e.target.value) })}
-                    title="Difficulty"
-                    className={`${fieldClass} w-32`}
+                    title={t.study.materialsTitle}
+                    className={`${fieldClass} w-28`}
                   >
                     {[1, 2, 3, 4, 5].map((d) => (
                       <option key={d} value={d}>
-                        Difficulty {d}
+                        {t.study.difficulty(d)}
                       </option>
                     ))}
                   </select>
@@ -134,7 +132,8 @@ export function StudyPage() {
                     type="button"
                     onClick={() => setMaterials((prev) => prev.filter((_, idx) => idx !== i))}
                     className="rounded-md p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
-                    title="Remove material"
+                    title={t.common.remove}
+                    aria-label={t.common.remove}
                   >
                     <Trash2 size={16} strokeWidth={2.25} />
                   </button>
@@ -147,7 +146,7 @@ export function StudyPage() {
               className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700"
             >
               <Plus size={14} strokeWidth={2.5} />
-              Add material
+              {t.study.addMaterial}
             </button>
           </div>
 
@@ -159,7 +158,7 @@ export function StudyPage() {
           )}
 
           <Button type="submit" variant="primary" disabled={submitting}>
-            {submitting ? "Building plan…" : "Build & schedule plan"}
+            {submitting ? t.study.buildingPlan : t.study.buildPlan}
           </Button>
         </form>
       </Card>
@@ -169,9 +168,9 @@ export function StudyPage() {
           <div className="mb-4 flex items-start gap-2.5 rounded-lg bg-emerald-50 px-3 py-2.5 text-sm text-emerald-800">
             <CalendarCheck size={16} strokeWidth={2.25} className="mt-0.5 shrink-0" />
             <span>
-              Scheduled {result.scheduledCount} study block(s) across {result.plan.days.length} day(s).{" "}
+              {t.study.scheduledSummary(result.scheduledCount, result.plan.days.length)}{" "}
               <Link to="/calendar" className="font-medium underline">
-                View on calendar
+                {t.study.viewOnCalendar}
               </Link>
             </span>
           </div>
@@ -180,7 +179,12 @@ export function StudyPage() {
               <div key={day.date} className="flex items-start justify-between border-b border-slate-100 pb-2">
                 <span className="w-28 shrink-0 text-slate-500">{day.date}</span>
                 <span className="flex-1 text-slate-700">
-                  {day.items.map((item) => `${item.title} (${item.minutes}m${item.isReview ? ", review" : ""})`).join(", ")}
+                  {day.items
+                    .map(
+                      (item) =>
+                        `${item.title} (${item.minutes} ${t.common.minutesShort}${item.isReview ? t.study.reviewSuffix : ""})`
+                    )
+                    .join(", ")}
                 </span>
               </div>
             ))}

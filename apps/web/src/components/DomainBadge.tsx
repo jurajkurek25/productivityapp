@@ -1,12 +1,6 @@
 import { Briefcase, Feather, GraduationCap, Users2, type LucideIcon } from "lucide-react";
 import type { LifeDomain } from "@productivityapp/core";
-
-const LABELS: Record<LifeDomain, string> = {
-  study: "Study",
-  business: "Business",
-  social: "Social",
-  relax: "Relax",
-};
+import { domainLabels } from "../lib/i18n";
 
 const ICONS: Record<LifeDomain, LucideIcon> = {
   study: GraduationCap,
@@ -34,7 +28,7 @@ export function DomainBadge({ domain }: { domain: LifeDomain }) {
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${PILL_CLASS[domain]}`}>
       <Icon size={12} strokeWidth={2.5} />
-      {LABELS[domain]}
+      {domainLabels[domain]}
     </span>
   );
 }
