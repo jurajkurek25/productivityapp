@@ -4,6 +4,7 @@ import fs from "node:fs";
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import fastifyStatic from "@fastify/static";
+import rateLimit from "@fastify/rate-limit";
 import { registerAuth } from "./plugins/auth.js";
 import { authRoutes } from "./routes/auth.js";
 import { goalRoutes } from "./routes/goals.js";
@@ -23,10 +24,17 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_WEB_DIST = path.resolve(__dirname, "../../web/dist");
 
 export async function buildApp() {
-  const app = Fastify({ logger: true });
+  // trustProxy: rate limiting (and any future IP-based logic) needs the
+  // real client IP from X-Forwarded-For, not the reverse proxy's own IP —
+  // this deployment always sits behind one (CloudPanel/nginx in production).
+  const app = Fastify({ logger: true, trustProxy: true });
 
   await app.register(cors, {
     origin: process.env.CORS_ORIGIN?.split(",") ?? true,
+  });
+  await app.register(rateLimit, {
+    max: 300,
+    timeWindow: "1 minute",
   });
   await registerAuth(app);
 

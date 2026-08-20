@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
-import { CheckCircle2, ChevronLeft, ChevronRight, Circle, Pencil, Play, Plus, Sparkles } from "lucide-react";
+import { CalendarRange, CheckCircle2, ChevronLeft, ChevronRight, Circle, Columns3, Pencil, Play, Plus, Sparkles } from "lucide-react";
 import { LIFE_DOMAINS, type LifeDomain, type TaskInstance } from "@productivityapp/core";
 import { api } from "../lib/api";
 import { addDaysISO, formatShort, todayISO } from "../lib/date";
@@ -13,6 +13,34 @@ const fieldClass = "rounded border border-slate-300 px-1.5 py-1 text-xs focus:bo
 function startOfWeek(date: string): string {
   const dow = new Date(date + "T00:00:00Z").getUTCDay();
   return addDaysISO(date, -dow);
+}
+
+function endOfWeek(date: string): string {
+  const dow = new Date(date + "T00:00:00Z").getUTCDay();
+  return addDaysISO(date, 6 - dow);
+}
+
+function startOfMonth(date: string): string {
+  return date.slice(0, 7) + "-01";
+}
+
+function endOfMonth(date: string): string {
+  const [y, m] = date.split("-").map(Number);
+  return new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
+}
+
+function addMonthsISO(date: string, n: number): string {
+  const [y, m, d] = date.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1 + n, d)).toISOString().slice(0, 10);
+}
+
+function diffDays(a: string, b: string): number {
+  return Math.round((new Date(b + "T00:00:00Z").getTime() - new Date(a + "T00:00:00Z").getTime()) / 86_400_000);
+}
+
+function monthLabel(date: string): string {
+  const label = new Date(date + "T00:00:00Z").toLocaleDateString("sk-SK", { month: "long", year: "numeric" });
+  return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 interface InstanceFormState {
@@ -31,7 +59,9 @@ const EMPTY_QUICK_ADD: QuickAddFormState = { title: "", domain: "business", dura
 
 export function CalendarPage() {
   const { start: startPomodoro } = usePomodoro();
+  const [viewMode, setViewMode] = useState<"week" | "month">("week");
   const [weekStart, setWeekStart] = useState(() => startOfWeek(todayISO()));
+  const [monthAnchor, setMonthAnchor] = useState(() => startOfMonth(todayISO()));
   const [instances, setInstances] = useState<TaskInstance[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -44,21 +74,50 @@ export function CalendarPage() {
   const weekEnd = addDaysISO(weekStart, 6);
   const days = Array.from({ length: 7 }, (_, i) => addDaysISO(weekStart, i));
 
+  const monthGridStart = startOfWeek(monthAnchor);
+  const monthGridEnd = endOfWeek(endOfMonth(monthAnchor));
+  const monthDays = Array.from({ length: diffDays(monthGridStart, monthGridEnd) + 1 }, (_, i) =>
+    addDaysISO(monthGridStart, i)
+  );
+
+  const rangeStart = viewMode === "week" ? weekStart : monthGridStart;
+  const rangeEnd = viewMode === "week" ? weekEnd : monthGridEnd;
+
   function load() {
     setLoading(true);
     api
-      .listCalendar(weekStart, weekEnd)
+      .listCalendar(rangeStart, rangeEnd)
       .then(setInstances)
       .finally(() => setLoading(false));
   }
 
-  useEffect(load, [weekStart]);
+  useEffect(load, [viewMode, weekStart, monthAnchor]);
+
+  function goToday() {
+    setWeekStart(startOfWeek(todayISO()));
+    setMonthAnchor(startOfMonth(todayISO()));
+  }
+
+  function goPrev() {
+    if (viewMode === "week") setWeekStart(addDaysISO(weekStart, -7));
+    else setMonthAnchor(addMonthsISO(monthAnchor, -1));
+  }
+
+  function goNext() {
+    if (viewMode === "week") setWeekStart(addDaysISO(weekStart, 7));
+    else setMonthAnchor(addMonthsISO(monthAnchor, 1));
+  }
+
+  function drillIntoWeek(date: string) {
+    setWeekStart(startOfWeek(date));
+    setViewMode("week");
+  }
 
   async function handleGenerate() {
     setGenerating(true);
     setMessage(null);
     try {
-      const res = await api.generateCalendar(weekStart, weekEnd);
+      const res = await api.generateCalendar(rangeStart, rangeEnd);
       setMessage(
         t.calendar.placedMessage(
           res.placed.length,
@@ -119,29 +178,41 @@ export function CalendarPage() {
         <div>
           <h1 className="font-display text-2xl font-bold text-slate-900">{t.calendar.title}</h1>
           <p className="mt-1 text-sm text-slate-500">
-            {formatShort(weekStart)} – {formatShort(weekEnd)}
+            {viewMode === "week" ? `${formatShort(weekStart)} – ${formatShort(weekEnd)}` : monthLabel(monthAnchor)}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center overflow-hidden rounded-lg border border-slate-300">
             <button
-              onClick={() => setWeekStart(addDaysISO(weekStart, -7))}
-              className="p-2 text-slate-500 hover:bg-slate-50"
-              title="Predchádzajúci týždeň"
+              onClick={() => setViewMode("week")}
+              className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium ${
+                viewMode === "week" ? "bg-brand-50 text-brand-700" : "text-slate-500 hover:bg-slate-50"
+              }`}
             >
+              <Columns3 size={14} strokeWidth={2.25} />
+              {t.calendar.weekView}
+            </button>
+            <button
+              onClick={() => setViewMode("month")}
+              className={`flex items-center gap-1.5 border-l border-slate-300 px-3 py-2 text-sm font-medium ${
+                viewMode === "month" ? "bg-brand-50 text-brand-700" : "text-slate-500 hover:bg-slate-50"
+              }`}
+            >
+              <CalendarRange size={14} strokeWidth={2.25} />
+              {t.calendar.monthView}
+            </button>
+          </div>
+          <div className="flex items-center overflow-hidden rounded-lg border border-slate-300">
+            <button onClick={goPrev} className="p-2 text-slate-500 hover:bg-slate-50" title={t.calendar.prevPeriod}>
               <ChevronLeft size={16} strokeWidth={2.25} />
             </button>
             <button
-              onClick={() => setWeekStart(startOfWeek(todayISO()))}
+              onClick={goToday}
               className="border-x border-slate-300 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
             >
               {t.calendar.today}
             </button>
-            <button
-              onClick={() => setWeekStart(addDaysISO(weekStart, 7))}
-              className="p-2 text-slate-500 hover:bg-slate-50"
-              title="Nasledujúci týždeň"
-            >
+            <button onClick={goNext} className="p-2 text-slate-500 hover:bg-slate-50" title={t.calendar.nextPeriod}>
               <ChevronRight size={16} strokeWidth={2.25} />
             </button>
           </div>
@@ -158,6 +229,50 @@ export function CalendarPage() {
           {Array.from({ length: 7 }).map((_, i) => (
             <div key={i} className="h-40 animate-pulse rounded-xl border border-slate-200/80 bg-white" />
           ))}
+        </div>
+      ) : viewMode === "month" ? (
+        <div>
+          <div className="grid grid-cols-7 gap-px overflow-hidden rounded-lg bg-slate-200/80 text-center text-[10px] font-semibold text-slate-400">
+            {t.settings.dayNames.map((name) => (
+              <div key={name} className="bg-slate-50 py-1.5">
+                {name.slice(0, 2)}
+              </div>
+            ))}
+          </div>
+          <div className="mt-1.5 grid grid-cols-7 gap-1.5">
+            {monthDays.map((date) => {
+              const dayInstances = instances.filter((i) => i.scheduledDate === date);
+              const isToday = date === todayISO();
+              const isCurrentMonth = date.slice(0, 7) === monthAnchor.slice(0, 7);
+              const domainsPresent = [...new Set(dayInstances.map((i) => i.domain))];
+              const dayNum = Number(date.slice(8, 10));
+              return (
+                <button
+                  key={date}
+                  onClick={() => drillIntoWeek(date)}
+                  aria-label={`${formatShort(date)}${dayInstances.length ? `, ${t.calendar.taskCount(dayInstances.length)}` : ""}`}
+                  className={`flex min-h-[60px] flex-col items-start gap-1 rounded-lg border p-1.5 text-left transition-colors sm:min-h-[80px] ${
+                    isCurrentMonth ? "bg-white hover:bg-slate-50" : "bg-slate-50/70 hover:bg-slate-50"
+                  } ${isToday ? "border-brand-300 ring-1 ring-brand-100" : "border-slate-200/80"}`}
+                >
+                  <span
+                    className={`text-xs font-semibold ${
+                      isToday ? "text-brand-700" : isCurrentMonth ? "text-slate-600" : "text-slate-300"
+                    }`}
+                  >
+                    {dayNum}
+                  </span>
+                  {dayInstances.length > 0 && (
+                    <div className="flex flex-wrap gap-0.5">
+                      {domainsPresent.slice(0, 4).map((d) => (
+                        <span key={d} className={`h-1.5 w-1.5 rounded-full ${domainDotClass(d)}`} />
+                      ))}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-7">

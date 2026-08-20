@@ -20,7 +20,7 @@ const changePasswordSchema = z.object({
 });
 
 export async function authRoutes(app: FastifyInstance) {
-  app.post("/auth/register", async (request, reply) => {
+  app.post("/auth/register", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (request, reply) => {
     const parsed = registerSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
     const { email, password, name } = parsed.data;
@@ -51,45 +51,71 @@ export async function authRoutes(app: FastifyInstance) {
     });
   });
 
-  app.post("/auth/login", async (request, reply) => {
-    const parsed = loginSchema.safeParse(request.body);
-    if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
-    const { email, password } = parsed.data;
+  app.post(
+    "/auth/login",
+    {
+      config: {
+        rateLimit: {
+          max: 10,
+          timeWindow: "1 minute",
+          // Default hook (onRequest) runs before body parsing, so
+          // request.body would be empty in keyGenerator — preHandler runs
+          // after parsing, which the email-based key below depends on.
+          hook: "preHandler",
+          // Keyed by IP + attempted email so brute-forcing one account by
+          // spreading requests across many IPs is still throttled, without
+          // unfairly limiting other users on a shared IP (NAT, office network).
+          keyGenerator: (request) => {
+            const email = (request.body as { email?: string } | undefined)?.email ?? "";
+            return `${request.ip}:${email}`;
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const parsed = loginSchema.safeParse(request.body);
+      if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+      const { email, password } = parsed.data;
 
-    const user = await prisma.user.findUnique({
-      where: { email },
-      include: { memberships: { include: { workspace: true } } },
-    });
-    if (!user) return reply.code(401).send({ error: "Invalid credentials" });
+      const user = await prisma.user.findUnique({
+        where: { email },
+        include: { memberships: { include: { workspace: true } } },
+      });
+      if (!user) return reply.code(401).send({ error: "Invalid credentials" });
 
-    const ok = await bcrypt.compare(password, user.passwordHash);
-    if (!ok) return reply.code(401).send({ error: "Invalid credentials" });
+      const ok = await bcrypt.compare(password, user.passwordHash);
+      if (!ok) return reply.code(401).send({ error: "Invalid credentials" });
 
-    const membership = user.memberships[0];
-    if (!membership) return reply.code(500).send({ error: "No workspace for user" });
+      const membership = user.memberships[0];
+      if (!membership) return reply.code(500).send({ error: "No workspace for user" });
 
-    const token = app.jwt.sign({ userId: user.id, workspaceId: membership.workspaceId });
-    return reply.send({
-      token,
-      user: { id: user.id, email: user.email, name: user.name },
-      workspace: { id: membership.workspace.id, name: membership.workspace.name },
-    });
-  });
+      const token = app.jwt.sign({ userId: user.id, workspaceId: membership.workspaceId });
+      return reply.send({
+        token,
+        user: { id: user.id, email: user.email, name: user.name },
+        workspace: { id: membership.workspace.id, name: membership.workspace.name },
+      });
+    }
+  );
 
-  app.post("/auth/change-password", { preHandler: [app.authenticate] }, async (request, reply) => {
-    const parsed = changePasswordSchema.safeParse(request.body);
-    if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
-    const { userId } = request.user;
-    const { currentPassword, newPassword } = parsed.data;
+  app.post(
+    "/auth/change-password",
+    { preHandler: [app.authenticate], config: { rateLimit: { max: 10, timeWindow: "1 minute" } } },
+    async (request, reply) => {
+      const parsed = changePasswordSchema.safeParse(request.body);
+      if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+      const { userId } = request.user;
+      const { currentPassword, newPassword } = parsed.data;
 
-    const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
-    const ok = await bcrypt.compare(currentPassword, user.passwordHash);
-    if (!ok) return reply.code(401).send({ error: "Nesprávne súčasné heslo" });
+      const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
+      const ok = await bcrypt.compare(currentPassword, user.passwordHash);
+      if (!ok) return reply.code(401).send({ error: "Nesprávne súčasné heslo" });
 
-    const passwordHash = await bcrypt.hash(newPassword, 10);
-    await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
-    return reply.code(204).send();
-  });
+      const passwordHash = await bcrypt.hash(newPassword, 10);
+      await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+      return reply.code(204).send();
+    }
+  );
 
   app.get("/me", { preHandler: [app.authenticate] }, async (request, reply) => {
     const { userId, workspaceId } = request.user;

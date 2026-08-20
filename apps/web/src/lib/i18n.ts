@@ -131,6 +131,11 @@ export const t = {
   calendar: {
     title: "Kalendár",
     today: "Dnes",
+    weekView: "Týždeň",
+    monthView: "Mesiac",
+    prevPeriod: "Predchádzajúce",
+    nextPeriod: "Nasledujúce",
+    taskCount: (n: number) => `${n} úloh`,
     generateSchedule: "Vygenerovať rozvrh",
     generating: "Generuje sa…",
     placedMessage: (placed: number, score: number, pct: number, unplaced: number) =>
