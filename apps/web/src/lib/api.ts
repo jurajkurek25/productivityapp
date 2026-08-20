@@ -1,6 +1,7 @@
 import type {
   EnergyState,
   Goal,
+  GoalStatus,
   LifeDomain,
   PriorityReport,
   RecurrenceRule,
@@ -76,6 +77,16 @@ export interface BehindPaceGoal {
   remainingMinutes: number;
 }
 
+export interface GoalTimeInvestment {
+  goalId: string;
+  title: string;
+  domain: LifeDomain;
+  status: GoalStatus;
+  scheduledMinutes: number;
+  completedMinutes: number;
+  completionRate: number;
+}
+
 export const api = {
   register: (email: string, password: string, name?: string) =>
     request<AuthResponse>("/auth/register", { method: "POST", body: JSON.stringify({ email, password, name }) }),
@@ -95,6 +106,8 @@ export const api = {
   suggestSteps: (goalId: string) => request<SuggestedStep[]>(`/goals/${goalId}/suggest-steps`),
   getGoalProgress: (goalId: string) => request<GoalProgress>(`/goals/${goalId}/progress`),
   getGoalsBehindPace: () => request<BehindPaceGoal[]>("/goals/progress-summary"),
+  getGoalTimeInvestment: (windowDays = 7) =>
+    request<GoalTimeInvestment[]>(`/goals/time-investment?windowDays=${windowDays}`),
 
   listSteps: (goalId?: string) => request<Step[]>(`/steps${goalId ? `?goalId=${goalId}` : ""}`),
   createStep: (data: {

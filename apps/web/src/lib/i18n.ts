@@ -93,6 +93,8 @@ export const t = {
       days < 0 ? `${title} — termín uplynul pred ${Math.abs(days)} dňami` : `${title} — termín o ${days} dní`,
     trendTitle: "Trend energie (30 dní)",
     trendEmpty: "Zatiaľ nemáš dosť histórie na graf trendu.",
+    goalInvestmentTitle: "Časová investícia podľa cieľov (posledných 7 dní)",
+    goalInvestmentEmpty: "Zatiaľ žiadna aktivita na cieľoch za posledných 7 dní.",
   },
   goals: {
     title: "Ciele",

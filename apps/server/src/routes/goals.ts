@@ -4,6 +4,9 @@ import { LIFE_DOMAINS, suggestStepsForGoal } from "@productivityapp/core";
 import { prisma } from "../lib/prisma.js";
 import { toDomainStep } from "../lib/mappers.js";
 import { computeGoalProgress, listGoalsBehindPace } from "../lib/goalProgress.js";
+import { computeGoalTimeInvestment } from "../lib/goalTimeInvestment.js";
+
+const timeInvestmentQuerySchema = z.object({ windowDays: z.coerce.number().min(1).max(90).optional() });
 
 const createGoalSchema = z.object({
   domain: z.enum(LIFE_DOMAINS),
@@ -36,6 +39,14 @@ export async function goalRoutes(app: FastifyInstance) {
   app.get("/goals/progress-summary", async (request) => {
     const { workspaceId } = request.user;
     return listGoalsBehindPace(workspaceId);
+  });
+
+  /** Per-goal scheduled/completed minutes over a trailing window — Dashboard time-investment card. */
+  app.get("/goals/time-investment", async (request, reply) => {
+    const parsed = timeInvestmentQuerySchema.safeParse(request.query);
+    if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+    const { workspaceId } = request.user;
+    return computeGoalTimeInvestment(workspaceId, parsed.data.windowDays ?? 7);
   });
 
   app.get("/goals/:id", async (request, reply) => {
