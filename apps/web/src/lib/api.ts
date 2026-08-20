@@ -80,6 +80,19 @@ export const api = {
     earliestDate?: string;
     aiSuggested?: boolean;
   }) => request<Step>("/steps", { method: "POST", body: JSON.stringify(data) }),
+  updateStep: (
+    id: string,
+    data: Partial<{
+      domain: LifeDomain;
+      title: string;
+      notes: string;
+      estimatedMinutes: number;
+      priority: number;
+      recurrence: RecurrenceRule;
+      earliestDate: string;
+      status: Step["status"];
+    }>
+  ) => request<Step>(`/steps/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
   deleteStep: (id: string) => request<void>(`/steps/${id}`, { method: "DELETE" }),
 
   listCalendar: (start: string, end: string) => request<TaskInstance[]>(`/calendar?start=${start}&end=${end}`),
@@ -88,8 +101,16 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ rangeStart, rangeEnd }),
     }),
-  updateInstance: (id: string, status: TaskInstance["status"]) =>
-    request<TaskInstance>(`/calendar/instances/${id}`, { method: "PATCH", body: JSON.stringify({ status }) }),
+  updateInstance: (
+    id: string,
+    data: Partial<{
+      status: TaskInstance["status"];
+      title: string;
+      domain: LifeDomain;
+      scheduledDate: string;
+      durationMinutes: number;
+    }>
+  ) => request<TaskInstance>(`/calendar/instances/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
 
   getEnergy: (date?: string) => request<EnergyState>(`/energy${date ? `?date=${date}` : ""}`),
   getPriority: (windowDays = 7) => request<PriorityReport>(`/priority?windowDays=${windowDays}`),

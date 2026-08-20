@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import type { TaskInstance } from "@productivityapp/core";
 import { api } from "../lib/api";
 import { addDaysISO, formatShort, todayISO } from "../lib/date";
@@ -9,12 +9,20 @@ function startOfWeek(date: string): string {
   return addDaysISO(date, -dow);
 }
 
+interface InstanceFormState {
+  title: string;
+  durationMinutes: number;
+  scheduledDate: string;
+}
+
 export function CalendarPage() {
   const [weekStart, setWeekStart] = useState(() => startOfWeek(todayISO()));
   const [instances, setInstances] = useState<TaskInstance[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<InstanceFormState | null>(null);
 
   const weekEnd = addDaysISO(weekStart, 6);
   const days = Array.from({ length: 7 }, (_, i) => addDaysISO(weekStart, i));
@@ -47,7 +55,24 @@ export function CalendarPage() {
 
   async function setStatus(id: string, status: TaskInstance["status"]) {
     setInstances((prev) => prev.map((i) => (i.id === id ? { ...i, status } : i)));
-    await api.updateInstance(id, status);
+    await api.updateInstance(id, { status });
+  }
+
+  function startEdit(inst: TaskInstance) {
+    setEditingId(inst.id);
+    setEditForm({ title: inst.title, durationMinutes: inst.durationMinutes, scheduledDate: inst.scheduledDate });
+  }
+
+  async function handleEditSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!editingId || !editForm || !editForm.title.trim()) return;
+    await api.updateInstance(editingId, {
+      title: editForm.title.trim(),
+      durationMinutes: editForm.durationMinutes,
+      scheduledDate: editForm.scheduledDate,
+    });
+    setEditingId(null);
+    load();
   }
 
   return (
@@ -104,37 +129,88 @@ export function CalendarPage() {
                 </p>
                 <div className="space-y-2">
                   {dayInstances.length === 0 && <p className="text-xs text-slate-300">—</p>}
-                  {dayInstances.map((inst) => (
-                    <div key={inst.id} className="rounded-md border border-slate-100 p-2">
-                      <div className="flex items-center gap-1.5">
-                        <span className={`h-1.5 w-1.5 rounded-full ${domainDotClass(inst.domain)}`} />
-                        <p
-                          className={`text-xs font-medium leading-snug ${
-                            inst.status === "completed" ? "text-slate-300 line-through" : "text-slate-700"
-                          }`}
-                        >
-                          {inst.title}
-                        </p>
-                      </div>
-                      <p className="mt-0.5 text-[10px] text-slate-400">{inst.durationMinutes}m</p>
-                      {inst.status !== "completed" && (
-                        <div className="mt-1 flex gap-2">
-                          <button
-                            onClick={() => setStatus(inst.id, "completed")}
-                            className="text-[10px] font-medium text-emerald-600 hover:underline"
-                          >
-                            Done
+                  {dayInstances.map((inst) =>
+                    editingId === inst.id && editForm ? (
+                      <form
+                        key={inst.id}
+                        onSubmit={handleEditSubmit}
+                        className="space-y-1.5 rounded-md border border-slate-300 p-2"
+                      >
+                        <input
+                          value={editForm.title}
+                          onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                          className="w-full rounded border border-slate-300 px-1.5 py-1 text-xs"
+                          required
+                        />
+                        <div className="flex gap-1">
+                          <input
+                            type="date"
+                            value={editForm.scheduledDate}
+                            onChange={(e) => setEditForm({ ...editForm, scheduledDate: e.target.value })}
+                            className="w-full rounded border border-slate-300 px-1 py-1 text-[10px]"
+                          />
+                          <input
+                            type="number"
+                            min={5}
+                            value={editForm.durationMinutes}
+                            onChange={(e) => setEditForm({ ...editForm, durationMinutes: Number(e.target.value) })}
+                            className="w-14 rounded border border-slate-300 px-1 py-1 text-[10px]"
+                            title="Minutes"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <button type="submit" className="text-[10px] font-medium text-emerald-600 hover:underline">
+                            Save
                           </button>
                           <button
-                            onClick={() => setStatus(inst.id, "skipped")}
+                            type="button"
+                            onClick={() => setEditingId(null)}
                             className="text-[10px] font-medium text-slate-400 hover:underline"
                           >
-                            Skip
+                            Cancel
                           </button>
                         </div>
-                      )}
-                    </div>
-                  ))}
+                      </form>
+                    ) : (
+                      <div key={inst.id} className="rounded-md border border-slate-100 p-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`h-1.5 w-1.5 rounded-full ${domainDotClass(inst.domain)}`} />
+                          <p
+                            className={`text-xs font-medium leading-snug ${
+                              inst.status === "completed" ? "text-slate-300 line-through" : "text-slate-700"
+                            }`}
+                          >
+                            {inst.title}
+                          </p>
+                        </div>
+                        <p className="mt-0.5 text-[10px] text-slate-400">{inst.durationMinutes}m</p>
+                        <div className="mt-1 flex gap-2">
+                          {inst.status !== "completed" && (
+                            <>
+                              <button
+                                onClick={() => setStatus(inst.id, "completed")}
+                                className="text-[10px] font-medium text-emerald-600 hover:underline"
+                              >
+                                Done
+                              </button>
+                              <button
+                                onClick={() => setStatus(inst.id, "skipped")}
+                                className="text-[10px] font-medium text-slate-400 hover:underline"
+                              >
+                                Skip
+                              </button>
+                            </>
+                          )}
+                          <button
+                            onClick={() => startEdit(inst)}
+                            className="text-[10px] font-medium text-slate-500 hover:underline"
+                          >
+                            Edit
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  )}
                 </div>
               </div>
             );

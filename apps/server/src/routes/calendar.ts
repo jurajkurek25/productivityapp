@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { defaultEnergyEngine, scheduleRange } from "@productivityapp/core";
+import { LIFE_DOMAINS, defaultEnergyEngine, scheduleRange } from "@productivityapp/core";
 import { prisma } from "../lib/prisma.js";
 import { toDomainStep, toDomainTaskInstance } from "../lib/mappers.js";
 import { buildCompletionHistory } from "../lib/energyHistory.js";
@@ -16,9 +16,15 @@ const generateSchema = z.object({
   rangeEnd: z.string(),
 });
 
-const updateInstanceSchema = z.object({
-  status: z.enum(["scheduled", "completed", "missed", "skipped"]),
-});
+const updateInstanceSchema = z
+  .object({
+    status: z.enum(["scheduled", "completed", "missed", "skipped"]).optional(),
+    title: z.string().min(1).max(200).optional(),
+    domain: z.enum(LIFE_DOMAINS).optional(),
+    scheduledDate: z.string().optional(),
+    durationMinutes: z.number().min(1).max(24 * 60).optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, { message: "At least one field is required" });
 
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
@@ -101,11 +107,14 @@ export async function calendarRoutes(app: FastifyInstance) {
     const existing = await prisma.taskInstance.findFirst({ where: { id, workspaceId } });
     if (!existing) return reply.code(404).send({ error: "Not found" });
 
+    const { status, ...rest } = parsed.data;
     const instance = await prisma.taskInstance.update({
       where: { id },
       data: {
-        status: parsed.data.status,
-        completedAt: parsed.data.status === "completed" ? new Date() : null,
+        ...rest,
+        ...(status !== undefined
+          ? { status, completedAt: status === "completed" ? new Date() : null }
+          : {}),
       },
     });
     return toDomainTaskInstance(instance);

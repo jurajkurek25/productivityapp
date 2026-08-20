@@ -49,7 +49,7 @@ export function CalendarScreen() {
 
   async function setStatus(instId: string, status: TaskInstance["status"]) {
     setInstances((prev) => prev.map((i) => (i.id === instId ? { ...i, status } : i)));
-    await api.updateInstance(instId, status);
+    await api.updateInstance(instId, { status });
   }
 
   return (
