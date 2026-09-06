@@ -4,6 +4,7 @@ import type {
   GoalStatus,
   LifeDomain,
   PriorityReport,
+  RecurrenceFrequency,
   RecurrenceRule,
   Step,
   StudyPlan,
@@ -112,6 +113,23 @@ export interface WeeklyTargetGoal {
   weeklyTargetStreak: number;
 }
 
+export interface EstimateAccuracyDomain {
+  domain: LifeDomain;
+  sampleSize: number;
+  estimatedMinutesTotal: number;
+  actualMinutesTotal: number;
+  biasPercent: number;
+}
+
+export interface StepStreak {
+  stepId: string;
+  goalId: string;
+  title: string;
+  domain: LifeDomain;
+  freq: RecurrenceFrequency;
+  streak: number;
+}
+
 export const api = {
   register: (email: string, password: string, name?: string) =>
     request<AuthResponse>("/auth/register", { method: "POST", body: JSON.stringify({ email, password, name }) }),
@@ -169,6 +187,8 @@ export const api = {
     }>
   ) => request<Step>(`/steps/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
   deleteStep: (id: string) => request<void>(`/steps/${id}`, { method: "DELETE" }),
+  getStepStreak: (id: string) => request<{ stepId: string; streak: number }>(`/steps/${id}/streak`),
+  getStepStreaks: () => request<StepStreak[]>("/steps/streaks"),
 
   listCalendar: (start: string, end: string) => request<TaskInstance[]>(`/calendar?start=${start}&end=${end}`),
   generateCalendar: (rangeStart: string, rangeEnd: string) =>
@@ -222,6 +242,8 @@ export const api = {
   getCapacity: () => request<WeeklyCapacityTemplate>("/workspace/capacity"),
   updateCapacity: (data: WeeklyCapacityTemplate) =>
     request<WeeklyCapacityTemplate>("/workspace/capacity", { method: "PUT", body: JSON.stringify(data) }),
+  getEstimateAccuracy: (windowDays = 90) =>
+    request<EstimateAccuracyDomain[]>(`/workspace/estimate-accuracy?windowDays=${windowDays}`),
 
   exportData: async (): Promise<Blob> => {
     const token = getToken();

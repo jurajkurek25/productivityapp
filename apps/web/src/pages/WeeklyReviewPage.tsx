@@ -4,7 +4,9 @@ import { Flame } from "lucide-react";
 import type { PriorityReport } from "@productivityapp/core";
 import { api, type WeeklyTargetGoal } from "../lib/api";
 import { Card } from "../components/Card";
+import { EstimateAccuracyCard } from "../components/EstimateAccuracyCard";
 import { GoalInvestmentCard } from "../components/GoalInvestmentCard";
+import { HabitStreaksCard } from "../components/HabitStreaksCard";
 import { NeglectedGoalsBanner } from "../components/NeglectedGoalsBanner";
 import { PriorityCard } from "../components/PriorityCard";
 import { t } from "../lib/i18n";
@@ -82,8 +84,10 @@ export function WeeklyReviewPage() {
         <p className="mt-1 text-sm text-slate-500">{t.weeklyReview.subtitle}</p>
       </div>
       <WeeklyTargetsCard />
+      <HabitStreaksCard />
       <NeglectedGoalsBanner />
       <GoalInvestmentCard />
+      <EstimateAccuracyCard />
       {priority && <PriorityCard report={priority} />}
     </div>
   );

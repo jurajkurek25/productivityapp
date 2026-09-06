@@ -3,6 +3,7 @@ import { z } from "zod";
 import { LIFE_DOMAINS } from "@productivityapp/core";
 import { prisma } from "../lib/prisma.js";
 import { recurrenceToRow, toDomainStep } from "../lib/mappers.js";
+import { computeStepStreak, listStepStreaks } from "../lib/stepStreak.js";
 
 const recurrenceSchema = z.object({
   freq: z.enum(["once", "daily", "weekly", "monthly"]),
@@ -78,5 +79,20 @@ export async function stepRoutes(app: FastifyInstance) {
     if (!existing) return reply.code(404).send({ error: "Not found" });
     await prisma.step.delete({ where: { id } });
     return reply.code(204).send();
+  });
+
+  /** Every active recurring (habit) step with its current streak — the habit-consistency counterpart to the goal-level weekly-target streak. */
+  app.get("/steps/streaks", async (request) => {
+    const { workspaceId } = request.user;
+    return listStepStreaks(workspaceId);
+  });
+
+  app.get("/steps/:id/streak", async (request, reply) => {
+    const { workspaceId } = request.user;
+    const { id } = request.params as { id: string };
+    const step = await prisma.step.findFirst({ where: { id, workspaceId } });
+    if (!step) return reply.code(404).send({ error: "Not found" });
+    const streak = await computeStepStreak(workspaceId, id);
+    return { stepId: id, streak };
   });
 }

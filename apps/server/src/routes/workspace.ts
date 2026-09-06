@@ -4,6 +4,9 @@ import { LIFE_DOMAINS } from "@productivityapp/core";
 import { prisma } from "../lib/prisma.js";
 import { parseWeeklyCapacity } from "../lib/capacity.js";
 import { toDomainStep, toDomainTaskInstance } from "../lib/mappers.js";
+import { computeEstimateAccuracy } from "../lib/estimateAccuracy.js";
+
+const estimateAccuracyQuerySchema = z.object({ windowDays: z.coerce.number().min(1).max(365).optional() });
 
 const dayCapacitySchema = z.object(
   Object.fromEntries(LIFE_DOMAINS.map((d) => [d, z.number().min(0).max(24 * 60)])) as Record<
@@ -57,5 +60,13 @@ export async function workspaceRoutes(app: FastifyInstance) {
       steps: steps.map(toDomainStep),
       taskInstances: instances.map(toDomainTaskInstance),
     });
+  });
+
+  /** Actual vs. estimated minutes by domain — a data-driven calibration signal, not a self-assessment. */
+  app.get("/workspace/estimate-accuracy", async (request, reply) => {
+    const parsed = estimateAccuracyQuerySchema.safeParse(request.query);
+    if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
+    const { workspaceId } = request.user;
+    return computeEstimateAccuracy(workspaceId, parsed.data.windowDays ?? 90);
   });
 }

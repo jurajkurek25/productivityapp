@@ -108,6 +108,19 @@ export const t = {
     weeklyTargetsEmpty: "Zatiaľ nemáš nastavený žiadny týždenný cieľ.",
     met: "Splnený",
     notMet: "Nesplnený",
+    estimateAccuracyTitle: "Presnosť odhadov (posledných 90 dní)",
+    estimateAccuracyEmpty: "Zatiaľ nemáš dosť dokončených úloh na vyhodnotenie presnosti odhadov.",
+    biasUnderestimate: (n: number) => `podceňuješ čas o ${n} %`,
+    biasOverestimate: (n: number) => `preceňuješ čas o ${Math.abs(n)} %`,
+    biasAccurate: "presné odhady",
+    sampleSizeLabel: (n: number) => `${n} dokončených úloh`,
+    habitStreaksTitle: "Séria pri návykoch",
+    habitStreaksEmpty: "Zatiaľ nemáš žiadny opakujúci sa krok (návyk).",
+    habitStreakLabel: (n: number, freq: RecurrenceFrequency) => {
+      const unit = freq === "daily" ? "dní" : freq === "weekly" ? "týždňov" : "mesiacov";
+      return `${n} ${unit} v rade`;
+    },
+    noStreakYet: "Zatiaľ bez série",
   },
   goals: {
     title: "Ciele",

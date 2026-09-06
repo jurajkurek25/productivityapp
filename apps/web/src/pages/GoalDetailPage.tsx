@@ -143,6 +143,22 @@ function InvestmentTrendCard({ goalId }: { goalId: string }) {
   );
 }
 
+function StepStreakBadge({ stepId, freq }: { stepId: string; freq: RecurrenceFrequency }) {
+  const [streak, setStreak] = useState<number | null>(null);
+
+  useEffect(() => {
+    api.getStepStreak(stepId).then((r) => setStreak(r.streak));
+  }, [stepId]);
+
+  if (!streak) return null;
+  return (
+    <span className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-amber-600">
+      <Flame size={12} strokeWidth={2.25} />
+      {t.weeklyReview.habitStreakLabel(streak, freq)}
+    </span>
+  );
+}
+
 const fieldClass =
   "rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500";
 
@@ -570,6 +586,11 @@ export function GoalDetailPage() {
                       {step.estimatedMinutes} {t.common.minutesShort} · {recurrenceLabel(step)}
                       {step.aiSuggested && ` · ${t.goalDetail.aiSuggested}`}
                     </p>
+                    {step.recurrence.freq !== "once" && (
+                      <div className="mt-1">
+                        <StepStreakBadge stepId={step.id} freq={step.recurrence.freq} />
+                      </div>
+                    )}
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
                     <button
