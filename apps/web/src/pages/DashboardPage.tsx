@@ -11,6 +11,7 @@ import { MissedTasksBanner } from "../components/MissedTasksBanner";
 import { NeglectedGoalsBanner } from "../components/NeglectedGoalsBanner";
 import { NotificationToggle } from "../components/NotificationToggle";
 import { PriorityCard } from "../components/PriorityCard";
+import { TodayFocusCard } from "../components/TodayFocusCard";
 import { formatShort } from "../lib/date";
 import { t } from "../lib/i18n";
 
@@ -139,6 +140,7 @@ export function DashboardPage() {
       <MissedTasksBanner onRescheduled={loadReports} />
       <BehindPaceBanner />
       <NeglectedGoalsBanner />
+      <TodayFocusCard />
       <NotificationToggle />
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {energy && <EnergyCard energy={energy} />}

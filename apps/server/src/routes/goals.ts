@@ -18,6 +18,11 @@ const createGoalSchema = z.object({
   description: z.string().max(2000).optional(),
   targetDate: z.string().optional(),
   weeklyTargetMinutes: z.number().min(0).max(10080).optional(),
+  obstacle: z.string().max(500).optional(),
+  ifThenPlan: z.string().max(500).optional(),
+  keyResultTarget: z.number().min(1).max(10_000_000).optional(),
+  keyResultUnit: z.string().max(40).optional(),
+  keyResultCurrent: z.number().min(0).max(10_000_000).optional(),
 });
 
 const updateGoalSchema = createGoalSchema.partial().extend({

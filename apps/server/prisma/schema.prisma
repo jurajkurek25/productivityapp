@@ -76,6 +76,16 @@ model Goal {
   description String?
   targetDate  String?
   weeklyTargetMinutes Int?
+  // WOOP (Wish/Outcome/Obstacle/Plan): the wish is the goal itself; these
+  // capture the obstacle and the if-then implementation intention.
+  obstacle    String?
+  ifThenPlan  String?
+  // OKR-style key result: a countable outcome independent of time invested
+  // (e.g. "50000 slov", "10 zákazníkov"), separate from the time-based
+  // progress tracked via steps/instances.
+  keyResultTarget  Int?
+  keyResultUnit    String?
+  keyResultCurrent Int      @default(0)
   status      String   @default("active") // active | paused | completed | abandoned
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

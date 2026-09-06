@@ -4,6 +4,7 @@ import { LIFE_DOMAINS } from "@productivityapp/core";
 import { prisma } from "../lib/prisma.js";
 import { toDomainTaskInstance } from "../lib/mappers.js";
 import { generateSchedule } from "../lib/scheduling.js";
+import { computeTodayFocus } from "../lib/todayFocus.js";
 
 const rangeQuerySchema = z.object({
   start: z.string(),
@@ -131,6 +132,12 @@ export async function calendarRoutes(app: FastifyInstance) {
       where: { workspaceId, status: "scheduled", scheduledDate: { lt: todayISO() } },
     });
     return { count };
+  });
+
+  /** Eisenhower-style urgent/important split of today's still-open plan — "what should I actually do first". */
+  app.get("/calendar/today-focus", async (request) => {
+    const { workspaceId } = request.user;
+    return computeTodayFocus(workspaceId);
   });
 
   /**

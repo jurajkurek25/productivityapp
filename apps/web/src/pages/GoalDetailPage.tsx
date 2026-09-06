@@ -5,6 +5,8 @@ import { LIFE_DOMAINS, type Goal, type GoalStatus, type LifeDomain, type Recurre
 import { api, type GoalProgress } from "../lib/api";
 import { DomainBadge } from "../components/DomainBadge";
 import { Card } from "../components/Card";
+import { KeyResultCard } from "../components/KeyResultCard";
+import { WoopCard } from "../components/WoopCard";
 import { Button } from "../components/Button";
 import { LineChart } from "../components/LineChart";
 import { formatShort } from "../lib/date";
@@ -444,6 +446,8 @@ export function GoalDetailPage() {
 
       <ProgressCard goalId={goal.id} />
       <InvestmentTrendCard goalId={goal.id} />
+      <KeyResultCard goal={goal} onUpdated={load} />
+      <WoopCard goal={goal} onUpdated={load} />
 
       <Card>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">

@@ -130,6 +130,18 @@ export interface StepStreak {
   streak: number;
 }
 
+export type FocusQuadrant = "do_now" | "protect_time" | "quick_win" | "reconsider";
+
+export interface TodayFocusItem {
+  instanceId: string;
+  title: string;
+  domain: LifeDomain;
+  durationMinutes: number;
+  goalId: string;
+  goalTitle: string;
+  quadrant: FocusQuadrant;
+}
+
 export const api = {
   register: (email: string, password: string, name?: string) =>
     request<AuthResponse>("/auth/register", { method: "POST", body: JSON.stringify({ email, password, name }) }),
@@ -214,6 +226,7 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ targetDate }),
     }),
+  getTodayFocus: () => request<TodayFocusItem[]>("/calendar/today-focus"),
 
   getEnergy: (date?: string) => request<EnergyState>(`/energy${date ? `?date=${date}` : ""}`),
   getEnergyTrend: (days = 30) =>

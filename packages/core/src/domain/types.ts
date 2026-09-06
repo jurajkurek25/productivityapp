@@ -23,6 +23,11 @@ export interface Goal {
   description?: string;
   targetDate?: ISODate;
   weeklyTargetMinutes?: number;
+  obstacle?: string;
+  ifThenPlan?: string;
+  keyResultTarget?: number;
+  keyResultUnit?: string;
+  keyResultCurrent?: number;
   status: GoalStatus;
   createdAt: ISODateTime;
   updatedAt: ISODateTime;

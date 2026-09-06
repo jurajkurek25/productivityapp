@@ -122,6 +122,57 @@ describe("goals + steps", () => {
     expect(updated.json().weeklyTargetMinutes).toBe(240);
   });
 
+  it("round-trips WOOP fields (obstacle, if-then plan) through create and update", async () => {
+    const user = await registerTestUser(app);
+    const headers = authHeaders(user.token);
+
+    const created = await app.inject({
+      method: "POST",
+      url: "/api/goals",
+      headers,
+      payload: { domain: "relax", title: "Meditovať", obstacle: "Večer som unavený", ifThenPlan: "spravím to ráno" },
+    });
+    expect(created.statusCode).toBe(201);
+    const goal = created.json();
+    expect(goal.obstacle).toBe("Večer som unavený");
+    expect(goal.ifThenPlan).toBe("spravím to ráno");
+
+    const updated = await app.inject({
+      method: "PATCH",
+      url: `/api/goals/${goal.id}`,
+      headers,
+      payload: { obstacle: "Nová prekážka" },
+    });
+    expect(updated.statusCode).toBe(200);
+    expect(updated.json().obstacle).toBe("Nová prekážka");
+  });
+
+  it("round-trips the OKR-style key result through create and increments", async () => {
+    const user = await registerTestUser(app);
+    const headers = authHeaders(user.token);
+
+    const created = await app.inject({
+      method: "POST",
+      url: "/api/goals",
+      headers,
+      payload: { domain: "business", title: "Napísať knihu", keyResultTarget: 50000, keyResultUnit: "slov" },
+    });
+    expect(created.statusCode).toBe(201);
+    const goal = created.json();
+    expect(goal.keyResultTarget).toBe(50000);
+    expect(goal.keyResultUnit).toBe("slov");
+    expect(goal.keyResultCurrent).toBe(0);
+
+    const updated = await app.inject({
+      method: "PATCH",
+      url: `/api/goals/${goal.id}`,
+      headers,
+      payload: { keyResultCurrent: 1500 },
+    });
+    expect(updated.statusCode).toBe(200);
+    expect(updated.json().keyResultCurrent).toBe(1500);
+  });
+
   it("returns rule-based suggested steps for a goal", async () => {
     const user = await registerTestUser(app);
     const created = await app.inject({
