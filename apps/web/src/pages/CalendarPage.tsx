@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { type DragEvent, FormEvent, useEffect, useState } from "react";
 import { CalendarRange, CheckCircle2, ChevronLeft, ChevronRight, Circle, Columns3, Pencil, Play, Plus, Sparkles } from "lucide-react";
 import { LIFE_DOMAINS, type LifeDomain, type TaskInstance } from "@productivityapp/core";
 import { api } from "../lib/api";
@@ -70,6 +70,8 @@ export function CalendarPage() {
   const [editForm, setEditForm] = useState<InstanceFormState | null>(null);
   const [quickAddDate, setQuickAddDate] = useState<string | null>(null);
   const [quickAddForm, setQuickAddForm] = useState<QuickAddFormState>(EMPTY_QUICK_ADD);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOverDate, setDragOverDate] = useState<string | null>(null);
 
   const weekEnd = addDaysISO(weekStart, 6);
   const days = Array.from({ length: 7 }, (_, i) => addDaysISO(weekStart, i));
@@ -135,6 +137,39 @@ export function CalendarPage() {
   async function setStatus(id: string, status: TaskInstance["status"]) {
     setInstances((prev) => prev.map((i) => (i.id === id ? { ...i, status } : i)));
     await api.updateInstance(id, { status });
+  }
+
+  function handleDragStart(e: DragEvent<HTMLDivElement>, id: string) {
+    setDraggingId(id);
+    e.dataTransfer.setData("text/plain", id);
+    e.dataTransfer.effectAllowed = "move";
+  }
+
+  function handleDragEnd() {
+    setDraggingId(null);
+    setDragOverDate(null);
+  }
+
+  function handleDragOverDay(e: DragEvent<HTMLDivElement>, date: string) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (dragOverDate !== date) setDragOverDate(date);
+  }
+
+  function handleDragLeaveDay(date: string) {
+    setDragOverDate((prev) => (prev === date ? null : prev));
+  }
+
+  async function handleDropOnDay(e: DragEvent<HTMLDivElement>, date: string) {
+    e.preventDefault();
+    const id = e.dataTransfer.getData("text/plain") || draggingId;
+    setDraggingId(null);
+    setDragOverDate(null);
+    if (!id) return;
+    const inst = instances.find((i) => i.id === id);
+    if (!inst || inst.scheduledDate === date) return;
+    setInstances((prev) => prev.map((i) => (i.id === id ? { ...i, scheduledDate: date } : i)));
+    await api.updateInstance(id, { scheduledDate: date });
   }
 
   function startEdit(inst: TaskInstance) {
@@ -284,8 +319,15 @@ export function CalendarPage() {
             return (
               <div
                 key={date}
-                className={`rounded-xl border bg-white p-3 shadow-card ${
-                  isToday ? "border-brand-300 ring-1 ring-brand-100" : "border-slate-200/80"
+                onDragOver={(e) => handleDragOverDay(e, date)}
+                onDragLeave={() => handleDragLeaveDay(date)}
+                onDrop={(e) => handleDropOnDay(e, date)}
+                className={`rounded-xl border bg-white p-3 shadow-card transition-colors ${
+                  dragOverDate === date
+                    ? "border-brand-400 bg-brand-50/40 ring-2 ring-brand-300"
+                    : isToday
+                      ? "border-brand-300 ring-1 ring-brand-100"
+                      : "border-slate-200/80"
                 }`}
               >
                 <p className={`mb-2 text-xs font-semibold ${isToday ? "text-brand-700" : "text-slate-400"}`}>
@@ -336,7 +378,15 @@ export function CalendarPage() {
                         </div>
                       </form>
                     ) : (
-                      <div key={inst.id} className="rounded-lg border border-slate-100 p-2">
+                      <div
+                        key={inst.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, inst.id)}
+                        onDragEnd={handleDragEnd}
+                        className={`cursor-grab rounded-lg border border-slate-100 p-2 active:cursor-grabbing ${
+                          draggingId === inst.id ? "opacity-40" : ""
+                        }`}
+                      >
                         <div className="flex items-start gap-1.5">
                           <span className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${domainDotClass(inst.domain)}`} />
                           <p

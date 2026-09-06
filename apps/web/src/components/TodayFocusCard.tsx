@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Play } from "lucide-react";
 import type { FocusQuadrant, TodayFocusItem } from "../lib/api";
 import { api } from "../lib/api";
+import { usePomodoro } from "../context/PomodoroContext";
 import { Card } from "./Card";
 import { DomainBadge } from "./DomainBadge";
 import { t } from "../lib/i18n";
@@ -24,6 +26,7 @@ const QUADRANT_CLASS: Record<FocusQuadrant, string> = {
 
 export function TodayFocusCard() {
   const [items, setItems] = useState<TodayFocusItem[] | null>(null);
+  const { start: startPomodoro } = usePomodoro();
 
   useEffect(() => {
     api.getTodayFocus().then(setItems);
@@ -61,9 +64,20 @@ export function TodayFocusCard() {
                           {i.title}
                         </Link>
                       </div>
-                      <span className="shrink-0 text-xs">
-                        {i.durationMinutes} {t.common.minutesShort}
-                      </span>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <span className="text-xs">
+                          {i.durationMinutes} {t.common.minutesShort}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => startPomodoro(i.instanceId, i.title)}
+                          className="rounded p-1 hover:bg-black/5"
+                          title={t.pomodoro.start}
+                          aria-label={t.pomodoro.start}
+                        >
+                          <Play size={14} strokeWidth={2.5} />
+                        </button>
+                      </div>
                     </li>
                   ))}
               </ul>
