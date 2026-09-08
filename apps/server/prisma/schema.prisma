@@ -1,0 +1,163 @@
+// Prisma schema for the productivity app.
+//
+// Tenancy model: every domain row is scoped by `workspaceId`, not `userId`.
+// A `Workspace` is the tenant boundary. `Membership` joins users to
+// workspaces so a workspace can gain additional members later (a team /
+// SaaS plan) without migrating any of the domain tables below — they
+// already only know about `workspaceId`.
+//
+// Note: enum unions (LifeDomain, GoalStatus, etc.) are enforced at the API
+// layer with zod, not in the schema — SQLite has no native enum support.
+// Swapping the datasource to Postgres later can reintroduce real enums.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Workspace {
+  id                String   @id @default(cuid())
+  name              String
+  weeklyCapacityJson String  @default("")
+  createdAt         DateTime @default(now())
+
+  memberships Membership[]
+  goals       Goal[]
+  steps       Step[]
+  instances   TaskInstance[]
+  aiMessages  AiMessage[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+
+  memberships       Membership[]
+  pushSubscriptions PushSubscription[]
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Membership {
+  id          String   @id @default(cuid())
+  userId      String
+  workspaceId String
+  role        String   @default("OWNER") // OWNER | MEMBER
+  createdAt   DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+}
+
+model Goal {
+  id          String   @id @default(cuid())
+  workspaceId String
+  domain      String // study | business | social | relax
+  title       String
+  description String?
+  targetDate  String?
+  weeklyTargetMinutes Int?
+  // WOOP (Wish/Outcome/Obstacle/Plan): the wish is the goal itself; these
+  // capture the obstacle and the if-then implementation intention.
+  obstacle    String?
+  ifThenPlan  String?
+  // OKR-style key result: a countable outcome independent of time invested
+  // (e.g. "50000 slov", "10 zákazníkov"), separate from the time-based
+  // progress tracked via steps/instances.
+  keyResultTarget  Int?
+  keyResultUnit    String?
+  keyResultCurrent Int      @default(0)
+  status      String   @default("active") // active | paused | completed | abandoned
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  steps     Step[]
+
+  @@index([workspaceId])
+}
+
+model Step {
+  id                   String   @id @default(cuid())
+  workspaceId          String
+  goalId               String
+  domain               String // study | business | social | relax
+  title                String
+  notes                String?
+  estimatedMinutes     Int
+  priority             Int      @default(3)
+  recurrenceFreq       String   @default("once") // once | daily | weekly | monthly
+  recurrenceDaysOfWeek String   @default("") // comma-separated ints, e.g. "1,3,5"
+  recurrenceInterval   Int      @default(1)
+  recurrenceUntil      String?
+  status               String   @default("active") // pending | active | done | archived
+  earliestDate         String?
+  aiSuggested          Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  workspace Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  goal      Goal           @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  instances TaskInstance[]
+
+  @@index([workspaceId])
+  @@index([goalId])
+}
+
+model TaskInstance {
+  id              String    @id @default(cuid())
+  workspaceId     String
+  stepId          String
+  goalId          String
+  domain          String // study | business | social | relax
+  title           String
+  scheduledDate   String
+  startMinute     Int?
+  durationMinutes Int
+  status          String    @default("scheduled") // scheduled | completed | missed | skipped
+  completedAt     DateTime?
+  rescheduledFrom String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  step      Step      @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, scheduledDate])
+  @@index([stepId])
+}
+
+model AiMessage {
+  id          String   @id @default(cuid())
+  workspaceId String
+  role        String // user | assistant
+  content     String
+  // JSON-encoded list of {type, goalId?, stepId?, title} — what the
+  // assistant actually created in this turn, shown as chips in the UI.
+  actionsJson String?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+}

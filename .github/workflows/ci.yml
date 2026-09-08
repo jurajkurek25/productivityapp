@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "claude/**"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # pnpm blocks Prisma's postinstall script by default (the "Ignored
+      # build scripts" warning above), so @prisma/client has no generated
+      # types (PrismaClient, Step, TaskInstance, ...) until this runs
+      # explicitly — every server typecheck/build/test step below needs it.
+      - name: Generate Prisma client
+        run: pnpm --filter server exec prisma generate
+
+      # apps/server and apps/web resolve @productivityapp/core's types from
+      # its built dist/ output, so core has to be compiled before anything
+      # that imports it can typecheck or build.
+      - name: Build core
+        run: pnpm --filter @productivityapp/core build
+
+      - name: Typecheck server
+        run: pnpm --filter server typecheck
+
+      - name: Typecheck web
+        run: pnpm --filter web typecheck
+
+      - name: Test core
+        run: pnpm --filter @productivityapp/core test
+
+      - name: Test server
+        run: pnpm --filter server test
+
+      - name: Build server
+        run: pnpm --filter server build
+
+      - name: Build web
+        run: pnpm --filter web build
