@@ -15,6 +15,7 @@ import { priorityRoutes } from "./routes/priority.js";
 import { studyRoutes } from "./routes/study.js";
 import { pushRoutes } from "./routes/push.js";
 import { workspaceRoutes } from "./routes/workspace.js";
+import { aiRoutes } from "./routes/ai.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -53,6 +54,7 @@ export async function buildApp() {
       await api.register(studyRoutes);
       await api.register(pushRoutes);
       await api.register(workspaceRoutes);
+      await api.register(aiRoutes);
     },
     { prefix: "/api" }
   );

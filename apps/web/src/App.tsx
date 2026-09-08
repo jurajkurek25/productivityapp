@@ -11,6 +11,7 @@ import { GoalDetailPage } from "./pages/GoalDetailPage";
 import { CalendarPage } from "./pages/CalendarPage";
 import { StudyPage } from "./pages/StudyPage";
 import { WeeklyReviewPage } from "./pages/WeeklyReviewPage";
+import { AssistantPage } from "./pages/AssistantPage";
 import { SettingsPage } from "./pages/SettingsPage";
 
 function ProtectedShell({ children }: { children: React.ReactNode }) {
@@ -82,6 +83,14 @@ export default function App() {
         element={
           <ProtectedShell>
             <WeeklyReviewPage />
+          </ProtectedShell>
+        }
+      />
+      <Route
+        path="/assistant"
+        element={
+          <ProtectedShell>
+            <AssistantPage />
           </ProtectedShell>
         }
       />

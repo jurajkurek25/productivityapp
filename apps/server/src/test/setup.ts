@@ -2,6 +2,7 @@ import { beforeEach } from "vitest";
 import { prisma } from "../lib/prisma.js";
 
 beforeEach(async () => {
+  await prisma.aiMessage.deleteMany();
   await prisma.pushSubscription.deleteMany();
   await prisma.taskInstance.deleteMany();
   await prisma.step.deleteMany();

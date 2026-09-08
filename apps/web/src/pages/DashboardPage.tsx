@@ -129,13 +129,16 @@ export function DashboardPage() {
           <span>{t.dashboard.getStarted}</span>
           <ArrowRight size={14} className="text-slate-300" />
         </p>
-        <Link
-          to="/review"
-          className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700"
-        >
-          {t.dashboard.reviewLink}
-          <ArrowRight size={14} />
-        </Link>
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+          <Link to="/review" className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700">
+            {t.dashboard.reviewLink}
+            <ArrowRight size={14} />
+          </Link>
+          <Link to="/assistant" className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700">
+            {t.dashboard.assistantLink}
+            <ArrowRight size={14} />
+          </Link>
+        </div>
       </div>
       <MissedTasksBanner onRescheduled={loadReports} />
       <BehindPaceBanner />

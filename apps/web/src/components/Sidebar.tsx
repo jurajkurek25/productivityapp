@@ -1,10 +1,11 @@
 import { NavLink } from "react-router-dom";
-import { CalendarDays, LayoutDashboard, ListChecks, LogOut, Settings, Sparkles, Target } from "lucide-react";
+import { Bot, CalendarDays, LayoutDashboard, ListChecks, LogOut, Settings, Sparkles, Target } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { t } from "../lib/i18n";
 
 const LINKS = [
   { to: "/", label: t.nav.dashboard, icon: LayoutDashboard },
+  { to: "/assistant", label: t.nav.assistant, icon: Bot },
   { to: "/goals", label: t.nav.goals, icon: Target },
   { to: "/calendar", label: t.nav.calendar, icon: CalendarDays },
   { to: "/study", label: t.nav.study, icon: Sparkles },

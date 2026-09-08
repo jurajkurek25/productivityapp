@@ -42,6 +42,7 @@ export const t = {
     calendar: "Kalendár",
     study: "Štúdium",
     review: "Týždenný súhrn",
+    assistant: "AI asistent",
     settings: "Nastavenia",
     logout: "Odhlásiť sa",
   },
@@ -100,6 +101,7 @@ export const t = {
     neglectedGoalNoActivity: (title: string) => `${title} — žiadna zaznamenaná aktivita`,
     neglectedGoalDaysAgo: (title: string, days: number) => `${title} — naposledy pred ${days} dňami`,
     reviewLink: "Zobraziť týždenný súhrn",
+    assistantLink: "Porozprávaj sa s AI asistentom",
   },
   todayFocus: {
     title: "Dnešné priority (urgentné × dôležité)",
@@ -290,5 +292,21 @@ export const t = {
     scheduledSummary: (count: number, days: number) => `Naplánovaných ${count} blokov štúdia na ${days} dní.`,
     viewOnCalendar: "Zobraziť v kalendári",
     reviewSuffix: ", opakovanie",
+  },
+  assistant: {
+    title: "AI asistent",
+    subtitle:
+      "Napíš, ako sa cítiš a čo chceš dosiahnuť — asistent sa opýta na doplňujúce otázky a ciele aj kroky ti rovno založí v appke.",
+    placeholder: "Napíš, ako sa cítiš alebo čo chceš dosiahnuť…",
+    send: "Odoslať",
+    sending: "Odosielam…",
+    notConfiguredTitle: "AI asistent nie je nastavený",
+    notConfiguredBody: "Správca appky musí na serveri nastaviť ANTHROPIC_API_KEY, aby táto funkcia fungovala.",
+    emptyState: "Napíš mi, ako sa dnes cítiš a čo by si chcel/a dosiahnuť.",
+    createdGoal: (title: string) => `Vytvorený cieľ: ${title}`,
+    createdStep: (title: string) => `Pridaný krok: ${title}`,
+    clearHistory: "Vymazať konverzáciu",
+    confirmClear: "Naozaj chceš vymazať celú konverzáciu s asistentom?",
+    errorSending: "Odoslanie sa nepodarilo, skús to znova.",
   },
 } as const;

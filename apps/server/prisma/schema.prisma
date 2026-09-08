@@ -29,6 +29,7 @@ model Workspace {
   goals       Goal[]
   steps       Step[]
   instances   TaskInstance[]
+  aiMessages  AiMessage[]
 }
 
 model User {
@@ -144,4 +145,19 @@ model TaskInstance {
 
   @@index([workspaceId, scheduledDate])
   @@index([stepId])
+}
+
+model AiMessage {
+  id          String   @id @default(cuid())
+  workspaceId String
+  role        String // user | assistant
+  content     String
+  // JSON-encoded list of {type, goalId?, stepId?, title} — what the
+  // assistant actually created in this turn, shown as chips in the UI.
+  actionsJson String?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
 }

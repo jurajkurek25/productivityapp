@@ -142,6 +142,21 @@ export interface TodayFocusItem {
   quadrant: FocusQuadrant;
 }
 
+export interface AiAction {
+  type: "create_goal" | "create_step";
+  goalId: string;
+  stepId?: string;
+  title: string;
+}
+
+export interface AiChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  actions: AiAction[];
+  createdAt: string;
+}
+
 export const api = {
   register: (email: string, password: string, name?: string) =>
     request<AuthResponse>("/auth/register", { method: "POST", body: JSON.stringify({ email, password, name }) }),
@@ -266,6 +281,12 @@ export const api = {
     if (!res.ok) throw new ApiError(res.status, res.statusText);
     return res.blob();
   },
+
+  getAiStatus: () => request<{ configured: boolean }>("/ai/status"),
+  getAiMessages: () => request<AiChatMessage[]>("/ai/messages"),
+  sendAiMessage: (message: string) =>
+    request<AiChatMessage>("/ai/chat", { method: "POST", body: JSON.stringify({ message }) }),
+  clearAiMessages: () => request<void>("/ai/messages", { method: "DELETE" }),
 };
 
 export { ApiError };
